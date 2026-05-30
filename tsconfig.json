@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+        "target":"es2015",
+        "module":"nodenext",
+        "moduleResolution":"nodenext",
+        "rootDir":"src",
+        "outDir":"dist",
+        "strict": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true
+    },
+    "include": [
+        "src/**/*"
+        ],                       /* Files to include in compilation */
+  "exclude": [
+    "node_modules",
+     "dist",
+    "**/*.test.ts"
+    ] /* Files to ignore */
+}
