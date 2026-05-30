@@ -1,0 +1,23 @@
+{
+  "name": "carwash-management-api",
+  "version": "1.0.0",
+  "description": "Backend for carwash system",
+  "homepage": "https://github.com/krunalkadam0703/carwash-management-api#readme",
+  "bugs": {
+    "url": "https://github.com/krunalkadam0703/carwash-management-api/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/krunalkadam0703/carwash-management-api.git"
+  },
+  "license": "Apache-2.0",
+  "author": "krunal kadam",
+  "type": "module",
+  "main": "server.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
