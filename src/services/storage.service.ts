@@ -14,9 +14,7 @@ export class StorageService {
   ): multer.StorageEngine {
     switch (storageType) {
       case 'disk':
-        return this.createDiskStorage(
-          destination,
-        );
+        return this.createDiskStorage(destination);
 
       case 'memory':
         return multer.memoryStorage();
@@ -26,9 +24,7 @@ export class StorageService {
     }
   }
 
-  private static createDiskStorage(
-    destination: string,
-  ): multer.StorageEngine {
+  private static createDiskStorage(destination: string): multer.StorageEngine {
     if (!fs.existsSync(destination)) {
       fs.mkdirSync(destination, {
         recursive: true,
@@ -41,14 +37,9 @@ export class StorageService {
       },
 
       filename: (_req, file, cb) => {
-        const uniqueSuffix =
-          Date.now() +
-          '-' +
-          Math.round(Math.random() * 1e9);
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
 
-        const extension = path.extname(
-          file.originalname,
-        );
+        const extension = path.extname(file.originalname);
 
         const fileName = `${uniqueSuffix}${extension}`;
 

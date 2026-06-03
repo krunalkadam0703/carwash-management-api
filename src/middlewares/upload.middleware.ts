@@ -8,9 +8,7 @@ export class UploadMiddleware {
 
     options: UploadOptions = {},
   ) {
-    return MulterService.create(
-      options,
-    ).single(fieldName);
+    return MulterService.create(options).single(fieldName);
   }
 
   static array(
@@ -20,9 +18,7 @@ export class UploadMiddleware {
 
     options: UploadOptions = {},
   ) {
-    return MulterService.create(
-      options,
-    ).array(fieldName, maxCount);
+    return MulterService.create(options).array(fieldName, maxCount);
   }
 
   static fields(
@@ -34,8 +30,6 @@ export class UploadMiddleware {
 
     options: UploadOptions = {},
   ) {
-    return MulterService.create(
-      options,
-    ).fields(fields);
+    return MulterService.create(options).fields(fields);
   }
 }

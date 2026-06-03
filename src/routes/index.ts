@@ -7,10 +7,10 @@ const apiRouter = Router();
 // Base status verification endpoint to test the unified response layout
 apiRouter.get('/status', (_req: Request, res: Response) => {
   ApiResponse.success(
-    res, 
-    { uptime: process.uptime() }, 
-    'Carwash core API layer is operational.', 
-    HttpStatus.OK
+    res,
+    { uptime: process.uptime() },
+    'Carwash core API layer is operational.',
+    HttpStatus.OK,
   );
 });
 

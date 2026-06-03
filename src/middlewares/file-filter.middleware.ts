@@ -3,9 +3,7 @@ import { Request } from 'express';
 import { MimeType } from '../constants/mime-types.js';
 
 export class FileFilterMiddleware {
-  static create(
-    allowedMimeTypes: MimeType[] = [],
-  ) {
+  static create(allowedMimeTypes: MimeType[] = []) {
     return (
       _req: Request,
 
@@ -18,19 +16,14 @@ export class FileFilterMiddleware {
         return cb(null, true);
       }
 
-      const isAllowed =
-        allowedMimeTypes.includes(
-          file.mimetype as MimeType,
-        );
+      const isAllowed = allowedMimeTypes.includes(file.mimetype as MimeType);
 
       if (isAllowed) {
         return cb(null, true);
       }
 
       return cb(
-        new Error(
-          `Invalid file type: ${file.mimetype}`,
-        ),
+        new Error(`Invalid file type: ${file.mimetype}`),
 
         false,
       );

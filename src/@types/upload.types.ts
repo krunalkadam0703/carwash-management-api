@@ -1,9 +1,6 @@
 import { MimeType } from '../constants/mime-types.js';
 
-export type StorageType =
-  | 'disk'
-  | 'memory'
-  | 's3';
+export type StorageType = 'disk' | 'memory' | 's3';
 
 export interface UploadOptions {
   storageType?: StorageType;

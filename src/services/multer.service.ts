@@ -19,19 +19,12 @@ export class MulterService {
     } = options;
 
     return multer({
-      storage: StorageService.createStorage(
-        storageType,
-        destination,
-      ),
+      storage: StorageService.createStorage(storageType, destination),
 
-      fileFilter:
-        FileFilterMiddleware.create(
-          allowedMimeTypes,
-        ),
+      fileFilter: FileFilterMiddleware.create(allowedMimeTypes),
 
       limits: {
-        fileSize:
-          maxFileSizeMB * 1024 * 1024,
+        fileSize: maxFileSizeMB * 1024 * 1024,
       },
     });
   }

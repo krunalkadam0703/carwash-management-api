@@ -15,7 +15,9 @@ if (cluster.isPrimary && process.env.NODE_ENV === 'production') {
   }
 
   cluster.on('exit', (worker, code, signal) => {
-    console.error(`❌ Worker Process [${worker.process.pid}] dropped (Code: ${code} | Signal: ${signal}). Reviving instance...`);
+    console.error(
+      `❌ Worker Process [${worker.process.pid}] dropped (Code: ${code} | Signal: ${signal}). Reviving instance...`,
+    );
     cluster.fork();
   });
 } else {
@@ -28,7 +30,7 @@ if (cluster.isPrimary && process.env.NODE_ENV === 'production') {
   // Safe Connection Draining Lifecycle Protocol (Graceful Shutdown)
   const gracefulShutdown = (signal: string) => {
     console.log(`\n🛑 Received ${signal}. Processing structural system drain...`);
-    
+
     server.close(() => {
       console.log('⚙️ Server instance has successfully disconnected all active socket rings.');
       process.exit(0);
