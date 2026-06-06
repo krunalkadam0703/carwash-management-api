@@ -3,6 +3,7 @@ import cluster from 'cluster';
 import { availableParallelism } from 'os';
 
 import app from './app.js';
+import { prisma } from './infrastructure/prisma/prisma.client.js';
 import { RedisClient } from './infrastructure/redis/index.js';
 
 const PORT = Number(process.env.PORT) || 5000;
@@ -29,6 +30,7 @@ if (cluster.isPrimary && process.env.NODE_ENV === 'production') {
 async function bootstrap(): Promise<void> {
   try {
     await RedisClient.initialize();
+    await prisma.$connect();
 
     const server = http.createServer(app);
 
@@ -44,8 +46,10 @@ async function bootstrap(): Promise<void> {
       server.close(async () => {
         try {
           await RedisClient.disconnect();
+          await prisma.$disconnect();
 
           console.log('✅ Redis disconnected');
+          console.log('✅ PostgreSQL disconnected');
           console.log('✅ HTTP server closed');
 
           process.exit(0);

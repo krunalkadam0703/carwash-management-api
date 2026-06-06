@@ -13,6 +13,9 @@
   "license": "Apache-2.0",
   "author": "krunal kadam",
   "type": "module",
+  "engines": {
+    "node": "^20.19 || ^22.12 || >=24.0"
+  },
   "main": "server.js",
   "directories": {
     "doc": "docs"
@@ -24,21 +27,28 @@
     "start": "node dist/server.js",
     "format": "prettier --write \"src/**/*.ts\" \"docs/**/*.md\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"docs/**/*.md\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/multer": "^2.1.0",
     "@types/node": "25.9.1",
+    "@types/pg": "^8.20.0",
     "prettier": "3.8.3",
+    "prisma": "^7.8.0",
     "tsx": "4.22.3",
     "typescript": "^6.0.3"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "cookie-parser": "^1.4.7",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "multer": "^2.1.1",
+    "pg": "^8.21.0",
     "redis": "^6.0.0"
   }
 }
