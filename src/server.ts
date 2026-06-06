@@ -1,14 +1,15 @@
 import http from 'http';
 import cluster from 'cluster';
 import { availableParallelism } from 'os';
-import app from './app.js';
 
-const PORT = process.env.PORT || 5000;
+import app from './app.js';
+import { RedisClient } from './infrastructure/redis/index.js';
+
+const PORT = Number(process.env.PORT) || 5000;
 const numCPUs = availableParallelism();
 
 if (cluster.isPrimary && process.env.NODE_ENV === 'production') {
-  console.log(`🚀 Primary Process [${process.pid}] managing cluster loop.`);
-  console.log(`Spawning cluster nodes across ${numCPUs} available CPU cores...`);
+  console.log(`🚀 Primary Process [${process.pid}] managing cluster.`);
 
   for (let i = 0; i < numCPUs; i++) {
     cluster.fork();
@@ -16,33 +17,54 @@ if (cluster.isPrimary && process.env.NODE_ENV === 'production') {
 
   cluster.on('exit', (worker, code, signal) => {
     console.error(
-      `❌ Worker Process [${worker.process.pid}] dropped (Code: ${code} | Signal: ${signal}). Reviving instance...`,
+      `❌ Worker [${worker.process.pid}] exited (Code: ${code}, Signal: ${signal})`,
     );
+
     cluster.fork();
   });
 } else {
-  const server = http.createServer(app);
+  bootstrap();
+}
 
-  server.listen(PORT, () => {
-    console.log(`⚡ Active Worker Process [${process.pid}] listening safely on port ${PORT}`);
-  });
+async function bootstrap(): Promise<void> {
+  try {
+    await RedisClient.initialize();
 
-  // Safe Connection Draining Lifecycle Protocol (Graceful Shutdown)
-  const gracefulShutdown = (signal: string) => {
-    console.log(`\n🛑 Received ${signal}. Processing structural system drain...`);
+    const server = http.createServer(app);
 
-    server.close(() => {
-      console.log('⚙️ Server instance has successfully disconnected all active socket rings.');
-      process.exit(0);
+    server.listen(PORT, () => {
+      console.log(
+        `⚡ Worker [${process.pid}] listening on port ${PORT}`,
+      );
     });
 
-    // Enforce hard-kill crash if connections hang too long
-    setTimeout(() => {
-      console.error('⚠️ Timeout limit hit. Forcing instant termination process layout.');
-      process.exit(1);
-    }, 10000);
-  };
+    const gracefulShutdown = async (signal: string): Promise<void> => {
+      console.log(`🛑 Received ${signal}. Starting graceful shutdown.`);
 
-  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+      server.close(async () => {
+        try {
+          await RedisClient.disconnect();
+
+          console.log('✅ Redis disconnected');
+          console.log('✅ HTTP server closed');
+
+          process.exit(0);
+        } catch (error) {
+          console.error('Shutdown error:', error);
+          process.exit(1);
+        }
+      });
+
+      setTimeout(() => {
+        console.error('⚠️ Forced shutdown timeout reached');
+        process.exit(1);
+      }, 10000);
+    };
+
+    process.on('SIGTERM', () => void gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => void gracefulShutdown('SIGINT'));
+  } catch (error) {
+    console.error('Application startup failed:', error);
+    process.exit(1);
+  }
 }
