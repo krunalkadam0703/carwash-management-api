@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -12,30 +10,474 @@ datasource db {
   provider = "postgresql"
 }
 
+/////////////////////////////////////////////////////
+// ENUMS
+/////////////////////////////////////////////////////
+
+enum UserRole {
+  OWNER
+  WORKER
+  CUSTOMER
+}
+
+enum AssignmentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum ActivityStatus {
+  CREATED
+  WASHING
+  COMPLETED
+  REJECTED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  PAYMENT_PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum NotificationType {
+  SUBSCRIPTION_REQUEST
+  SUBSCRIPTION_APPROVED
+  SUBSCRIPTION_REJECTED
+  PAYMENT_PENDING
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  VEHICLE_ASSIGNED
+  VEHICLE_UNASSIGNED
+  CAR_WASH_STARTED
+  CAR_WASH_COMPLETED
+  SUBSCRIPTION_EXPIRING
+  SYSTEM
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  WHATSAPP
+  PUSH
+}
+
+/////////////////////////////////////////////////////
+// BUSINESS
+/////////////////////////////////////////////////////
+
+model Business {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String  @unique
+
+  owner         User                  @relation("BusinessOwner", fields: [ownerId], references: [id])
+  users         User[]
+  vehicleTypes  VehicleType[]
+  services      Service[]
+  plans         Plan[]
+  vehicles      Vehicle[]
+  subscriptions VehicleSubscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/////////////////////////////////////////////////////
+// USER
+/////////////////////////////////////////////////////
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  role      String   @default("USER")
+  id         String   @id
+  role       UserRole
+  businessId String?
+
+  business              Business?               @relation(fields: [businessId], references: [id])
+  ownedBusiness         Business?               @relation("BusinessOwner")
+  vehicles              Vehicle[]               @relation("CustomerVehicles")
+  bookings              Booking[]
+  workerAssignments     WorkerAssignment[]
+  workerActivities      ActivityLog[]           @relation("WorkerActivities")
+  customerActivities    ActivityLog[]           @relation("CustomerActivities")
+  approvedSubscriptions VehicleSubscription[]   @relation("SubscriptionApprover")
+  approvalLogs          SubscriptionApprovalLog[]
+  notifications         Notification[]
+  createdAssignments    WorkerAssignment[]      @relation("AssignmentCreator")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  bookings  Booking[]
-
-  @@map("users")
+  @@index([businessId])
+  @@index([role])
 }
 
-model Booking {
-  id        String   @id @default(uuid())
-  userId    String
-  status    String   @default("PENDING")
-  price     Float?
+/////////////////////////////////////////////////////
+// VEHICLE TYPE
+/////////////////////////////////////////////////////
 
-  user      User     @relation(fields: [userId], references: [id])
+model VehicleType {
+  id         String  @id @default(uuid())
+  businessId String
+  name       String
+  slug       String
+  sortOrder  Int     @default(0)
+  isActive   Boolean @default(true)
+
+  business Business @relation(fields: [businessId], references: [id])
+  services Service[]
+  plans    Plan[]
+  vehicles Vehicle[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([businessId, name])
+  @@unique([businessId, slug])
+}
+
+/////////////////////////////////////////////////////
+// SERVICE
+/////////////////////////////////////////////////////
+
+model Service {
+  id            String  @id @default(uuid())
+  businessId    String
+  vehicleTypeId String
+  name          String
+  description   String?
+  basePrice     Decimal @db.Decimal(10, 2)
+
+  business     Business    @relation(fields: [businessId], references: [id])
+  vehicleType  VehicleType @relation(fields: [vehicleTypeId], references: [id])
+  planServices PlanService[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/////////////////////////////////////////////////////
+// PLAN
+/////////////////////////////////////////////////////
+
+model Plan {
+  id            String  @id @default(uuid())
+  businessId    String
+  vehicleTypeId String
+  name          String
+  description   String?
+  category      String?
+  price         Decimal @db.Decimal(10, 2)
+  durationDays  Int
+
+  business      Business              @relation(fields: [businessId], references: [id])
+  vehicleType   VehicleType           @relation(fields: [vehicleTypeId], references: [id])
+  services      PlanService[]
+  subscriptions VehicleSubscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([businessId, name])
+}
+
+/////////////////////////////////////////////////////
+// PLAN SERVICE
+/////////////////////////////////////////////////////
+
+model PlanService {
+  id        String @id @default(uuid())
+  planId    String
+  serviceId String
+
+  plan    Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, serviceId])
+}
+
+/////////////////////////////////////////////////////
+// VEHICLE
+/////////////////////////////////////////////////////
+
+model Vehicle {
+  id            String  @id @default(uuid())
+  businessId    String
+  customerId    String
+  vehicleTypeId String
+  vehicleNumber String
+  vehicleName   String?
+  brand         String?
+  model         String?
+  color         String?
+  location      String?
+
+  business      Business              @relation(fields: [businessId], references: [id])
+  customer      User                  @relation("CustomerVehicles", fields: [customerId], references: [id])
+  vehicleType   VehicleType           @relation(fields: [vehicleTypeId], references: [id])
+  photos        VehiclePhoto[]
+  subscriptions VehicleSubscription[]
+  bookings      Booking[]
+  assignments   WorkerAssignment[]
+  activityLogs  ActivityLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([businessId, vehicleNumber])
+}
+
+/////////////////////////////////////////////////////
+// VEHICLE PHOTO
+/////////////////////////////////////////////////////
+
+model VehiclePhoto {
+  id        String @id @default(uuid())
+  vehicleId String
+  imageUrl  String
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+/////////////////////////////////////////////////////
+// VEHICLE SUBSCRIPTION
+/////////////////////////////////////////////////////
+
+model VehicleSubscription {
+  id              String             @id @default(uuid())
+  businessId      String
+  vehicleId       String
+  planId          String
+  status          SubscriptionStatus @default(REQUESTED)
+  requestedAt     DateTime           @default(now())
+  approvedAt      DateTime?
+  approvedById    String?
+  rejectedAt      DateTime?
+  rejectionReason String?
+  startDate       DateTime?
+  endDate         DateTime?
+  amount          Decimal            @db.Decimal(10, 2)
+  autoRenew       Boolean            @default(false)
+  // FIX: was incorrectly defaulted to true
+  expiryReminderSent  Boolean @default(false)
+  renewalReminderSent Boolean @default(false)
+
+  business     Business                  @relation(fields: [businessId], references: [id])
+  vehicle      Vehicle                   @relation(fields: [vehicleId], references: [id])
+  plan         Plan                      @relation(fields: [planId], references: [id])
+  approvedBy   User?                     @relation("SubscriptionApprover", fields: [approvedById], references: [id])
+  payments     Payment[]
+  approvalLogs SubscriptionApprovalLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([vehicleId])
+}
+
+/////////////////////////////////////////////////////
+// PAYMENT (RAZORPAY)
+/////////////////////////////////////////////////////
+
+model Payment {
+  id                String        @id @default(uuid())
+  subscriptionId    String
+  amount            Decimal       @db.Decimal(10, 2)
+  status            PaymentStatus @default(PENDING)
+  razorpayOrderId   String?       @unique
+  razorpayPaymentId String?       @unique
+  razorpaySignature String?
+  paymentMethod     String?
+  receiptId         String?       @unique
+  currency          String        @default("INR")
+  failureReason     String?
+  paidAt            DateTime?
+
+  subscription VehicleSubscription @relation(fields: [subscriptionId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+/////////////////////////////////////////////////////
+// SUBSCRIPTION APPROVAL LOG
+/////////////////////////////////////////////////////
+
+model SubscriptionApprovalLog {
+  id             String @id @default(uuid())
+  subscriptionId String
+  performedById  String
+  action         String
+  remarks        String?
+
+  subscription VehicleSubscription @relation(fields: [subscriptionId], references: [id])
+  performedBy  User                @relation(fields: [performedById], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+/////////////////////////////////////////////////////
+// BOOKING
+/////////////////////////////////////////////////////
+
+model Booking {
+  id            String        @id @default(uuid())
+  customerId    String
+  vehicleId     String
+  scheduledDate DateTime
+  status        BookingStatus @default(PENDING)
+
+  customer User    @relation(fields: [customerId], references: [id])
+  vehicle  Vehicle @relation(fields: [vehicleId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+/////////////////////////////////////////////////////
+// WORKER ASSIGNMENT
+/////////////////////////////////////////////////////
+
+model WorkerAssignment {
+  id           String           @id @default(uuid())
+  // FIX: assignedById was missing as a declared field
+  assignedById String?
+  workerId     String
+  vehicleId    String
+  status       AssignmentStatus @default(PENDING)
+  assignedAt   DateTime         @default(now())
+  completedAt  DateTime?
+
+  assignedBy User?   @relation("AssignmentCreator", fields: [assignedById], references: [id])
+  worker     User    @relation(fields: [workerId], references: [id])
+  vehicle    Vehicle @relation(fields: [vehicleId], references: [id])
+}
+
+/////////////////////////////////////////////////////
+// ACTIVITY LOG
+/////////////////////////////////////////////////////
+
+model ActivityLog {
+  id          String         @id @default(uuid())
+  workerId    String
+  customerId  String
+  vehicleId   String
+  status      ActivityStatus
+  reason      String?
+  remarks     String?
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  worker   User            @relation("WorkerActivities", fields: [workerId], references: [id])
+  customer User            @relation("CustomerActivities", fields: [customerId], references: [id])
+  vehicle  Vehicle         @relation(fields: [vehicleId], references: [id])
+  photos   ActivityPhoto[]
+
+  createdAt DateTime @default(now())
+}
+
+/////////////////////////////////////////////////////
+// NOTIFICATION
+/////////////////////////////////////////////////////
+
+model Notification {
+  id        String             @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  status    NotificationStatus @default(UNREAD)
+  actionUrl String?
+  metadata  Json?
+  readAt    DateTime?
+
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries NotificationDelivery[]
 
   createdAt DateTime @default(now())
 
-  @@map("bookings")
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+/////////////////////////////////////////////////////
+// NOTIFICATION DELIVERY
+/////////////////////////////////////////////////////
+
+model NotificationDelivery {
+  id             String              @id @default(uuid())
+  notificationId String
+  channel        NotificationChannel
+  delivered      Boolean             @default(false)
+  deliveredAt    DateTime?
+  errorMessage   String?
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([notificationId])
+}
+
+/////////////////////////////////////////////////////
+// AUDIT LOG
+/////////////////////////////////////////////////////
+
+model AuditLog {
+  id         String  @id @default(uuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String
+  oldData    Json?
+  newData    Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+}
+
+/////////////////////////////////////////////////////
+// ACTIVITY PHOTO
+/////////////////////////////////////////////////////
+
+model ActivityPhoto {
+  id            String  @id @default(uuid())
+  activityLogId String
+  imageUrl      String
+  photoType     String?
+
+  activityLog ActivityLog @relation(fields: [activityLogId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 }
