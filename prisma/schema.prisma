@@ -114,27 +114,86 @@ model Business {
 /////////////////////////////////////////////////////
 
 model User {
-  id         String   @id
-  role       UserRole
-  businessId String?
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  role          UserRole @default(CUSTOMER)
+  phoneNumber   String?
+  address       String?
+  isActive      Boolean  @default(true)
+  businessId    String?
 
-  business              Business?               @relation(fields: [businessId], references: [id])
-  ownedBusiness         Business?               @relation("BusinessOwner")
-  vehicles              Vehicle[]               @relation("CustomerVehicles")
+  business              Business?                 @relation(fields: [businessId], references: [id])
+  sessions              Session[]
+  accounts              Account[]
+  ownedBusiness         Business?                 @relation("BusinessOwner")
+  vehicles              Vehicle[]                 @relation("CustomerVehicles")
   bookings              Booking[]
   workerAssignments     WorkerAssignment[]
-  workerActivities      ActivityLog[]           @relation("WorkerActivities")
-  customerActivities    ActivityLog[]           @relation("CustomerActivities")
-  approvedSubscriptions VehicleSubscription[]   @relation("SubscriptionApprover")
+  workerActivities      ActivityLog[]             @relation("WorkerActivities")
+  customerActivities    ActivityLog[]             @relation("CustomerActivities")
+  approvedSubscriptions VehicleSubscription[]     @relation("SubscriptionApprover")
   approvalLogs          SubscriptionApprovalLog[]
   notifications         Notification[]
-  createdAssignments    WorkerAssignment[]      @relation("AssignmentCreator")
+  createdAssignments    WorkerAssignment[]        @relation("AssignmentCreator")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([businessId])
   @@index([role])
+}
+
+/////////////////////////////////////////////////////
+// BETTER AUTH
+/////////////////////////////////////////////////////
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@index([identifier])
 }
 
 /////////////////////////////////////////////////////

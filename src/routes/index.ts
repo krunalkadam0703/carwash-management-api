@@ -1,8 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { ApiResponse } from '../utils/api-response.js';
 import { HttpStatus } from '../constants/http.js';
+import authRouter from './auth.routes.js';
 
 const apiRouter = Router();
+
+apiRouter.use('/auth', authRouter);
 
 // Base status verification endpoint to test the unified response layout
 apiRouter.get('/status', (_req: Request, res: Response) => {

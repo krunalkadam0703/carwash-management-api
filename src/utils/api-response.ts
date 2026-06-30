@@ -3,7 +3,12 @@ import { Response } from 'express';
 import { HttpStatus } from '../constants/http.js';
 
 export class ApiResponse {
-  static success(res: Response, data: T, message = 'Success', statusCode = HttpStatus.OK): void {
+  static success<T>(
+    res: Response,
+    data: T,
+    message = 'Success',
+    statusCode = HttpStatus.OK,
+  ): void {
     res.status(statusCode).json({
       success: true,
       status: 'success',
@@ -16,8 +21,10 @@ export class ApiResponse {
     res: Response,
     message = 'Error',
     statusCode = HttpStatus.INTERNAL_SERVER_ERROR,
+    errorDetails?: unknown,
   ): void {
     res.status(statusCode).json({
+      success: false,
       status: 'error',
       error: {
         message,

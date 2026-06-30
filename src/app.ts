@@ -1,9 +1,16 @@
 import express, { Application, Request, Response } from 'express';
+import { toNodeHandler } from 'better-auth/node';
 import cookieParser from 'cookie-parser';
 import apiRouter from './routes/index.js';
+import { auth } from './config/auth.config.js';
 import { errorMiddleware } from './middlewares/error.middleware.js';
 
 const app: Application = express();
+
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+
+app.all('/api/auth/{*authPath}', toNodeHandler(auth));
 
 // High-Performance Body Parsers
 app.use(express.json({ limit: '10mb' }));
