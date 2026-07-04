@@ -10,6 +10,30 @@ const app: Application = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
 
+const allowedOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean) ?? [];
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Vary', 'Origin');
+  }
+
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(204);
+    return;
+  }
+
+  next();
+});
+
 app.all('/api/auth/{*authPath}', toNodeHandler(auth));
 
 // High-Performance Body Parsers
@@ -41,3 +65,4 @@ app.use((_req: Request, res: Response) => {
 app.use(errorMiddleware);
 
 export default app;
+

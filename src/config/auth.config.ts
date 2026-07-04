@@ -21,6 +21,14 @@ export const auth = betterAuth({
       secure: process.env.NODE_ENV === 'production',
     },
   },
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ['google'],
+      requireLocalEmailVerified: false,
+      updateUserInfoOnLink: true,
+    },
+  },
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID || '',
@@ -57,3 +65,4 @@ export const auth = betterAuth({
     },
   },
 });
+
