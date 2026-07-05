@@ -13,6 +13,7 @@ import subscriptionPauseRouter from './subscription-pause.routes.js';
 import subscriptionRouter from './subscription.routes.js';
 import vehicleTypeRouter from './vehicle-type.routes.js';
 import vehicleRouter from './vehicle.routes.js';
+import webhookEventRouter from './webhook-event.routes.js';
 import workerRouter from './worker.routes.js';
 
 const apiRouter = Router();
@@ -29,6 +30,7 @@ apiRouter.use('/plans', planRouter);
 apiRouter.use('/vehicles', vehicleRouter);
 apiRouter.use('/subscription-pauses', subscriptionPauseRouter);
 apiRouter.use('/subscriptions', subscriptionRouter);
+apiRouter.use('/webhooks', webhookEventRouter);
 apiRouter.use('/workers', workerRouter);
 
 // Base status verification endpoint to test the unified response layout
