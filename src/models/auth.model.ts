@@ -1,4 +1,4 @@
-export type AppRole = 'OWNER' | 'WORKER' | 'CUSTOMER';
+export type AppRole = 'SYSTEM_ADMIN' | 'OWNER' | 'WORKER' | 'CUSTOMER';
 
 export type AppUser = {
   id: string;

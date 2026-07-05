@@ -3,10 +3,12 @@ import { ApiResponse } from '../utils/api-response.js';
 import { HttpStatus } from '../constants/http.js';
 import authRouter from './auth.routes.js';
 import serviceRouter from './service.routes.js';
+import vehicleTypeRouter from './vehicle-type.routes.js';
 
 const apiRouter = Router();
 
 apiRouter.use('/auth', authRouter);
+apiRouter.use('/vehicle-types', vehicleTypeRouter);
 apiRouter.use('/services', serviceRouter);
 
 // Base status verification endpoint to test the unified response layout
