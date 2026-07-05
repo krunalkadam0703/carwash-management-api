@@ -3,6 +3,7 @@ import { ApiResponse } from '../utils/api-response.js';
 import { HttpStatus } from '../constants/http.js';
 import authRouter from './auth.routes.js';
 import dailyWashRouter from './daily-wash.routes.js';
+import notificationRouter from './notification.routes.js';
 import paymentRouter from './payment.routes.js';
 import planRouter from './plan.routes.js';
 import serviceRouter from './service.routes.js';
@@ -15,6 +16,7 @@ const apiRouter = Router();
 
 apiRouter.use('/auth', authRouter);
 apiRouter.use('/daily-washes', dailyWashRouter);
+apiRouter.use('/notifications', notificationRouter);
 apiRouter.use('/payments', paymentRouter);
 apiRouter.use('/vehicle-types', vehicleTypeRouter);
 apiRouter.use('/services', serviceRouter);
@@ -35,6 +37,4 @@ apiRouter.get('/status', (_req: Request, res: Response) => {
 
 // Your future backend feature modules will slide in here cleanly:
 // apiRouter.use('/bookings', bookingRouter);
-// apiRouter.use('/notifications', notificationRouter);
-
 export default apiRouter;
