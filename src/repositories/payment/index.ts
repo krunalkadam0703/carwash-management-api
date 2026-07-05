@@ -1,0 +1,30 @@
+import type { CompletePaymentInput, CreateSubscriptionPaymentInput, FailPaymentInput, PaymentRecord } from '../../models/payment.model.js';
+import { paymentPersistentStorageRepository } from './persistent-storage.js';
+
+export class PaymentRepository {
+  findManyByBusinessId(businessId: string, customerId?: string): Promise<PaymentRecord[]> {
+    return paymentPersistentStorageRepository.findManyByBusinessId(businessId, customerId);
+  }
+
+  findById(businessId: string, id: string): Promise<PaymentRecord | null> {
+    return paymentPersistentStorageRepository.findById(businessId, id);
+  }
+
+  findSubscription(businessId: string, subscriptionId: string) {
+    return paymentPersistentStorageRepository.findSubscription(businessId, subscriptionId);
+  }
+
+  createSubscriptionPayment(input: CreateSubscriptionPaymentInput): Promise<PaymentRecord> {
+    return paymentPersistentStorageRepository.createSubscriptionPayment(input);
+  }
+
+  complete(input: CompletePaymentInput, durationDays: number): Promise<PaymentRecord> {
+    return paymentPersistentStorageRepository.complete(input, durationDays);
+  }
+
+  fail(input: FailPaymentInput): Promise<PaymentRecord> {
+    return paymentPersistentStorageRepository.fail(input);
+  }
+}
+
+export const paymentRepository = new PaymentRepository();

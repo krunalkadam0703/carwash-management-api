@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { ApiResponse } from '../utils/api-response.js';
 import { HttpStatus } from '../constants/http.js';
 import authRouter from './auth.routes.js';
+import paymentRouter from './payment.routes.js';
 import planRouter from './plan.routes.js';
 import serviceRouter from './service.routes.js';
 import subscriptionRouter from './subscription.routes.js';
@@ -11,6 +12,7 @@ import vehicleRouter from './vehicle.routes.js';
 const apiRouter = Router();
 
 apiRouter.use('/auth', authRouter);
+apiRouter.use('/payments', paymentRouter);
 apiRouter.use('/vehicle-types', vehicleTypeRouter);
 apiRouter.use('/services', serviceRouter);
 apiRouter.use('/plans', planRouter);
