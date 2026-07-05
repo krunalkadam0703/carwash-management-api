@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { ApiResponse } from '../utils/api-response.js';
 import { HttpStatus } from '../constants/http.js';
 import authRouter from './auth.routes.js';
+import complaintRouter from './complaint.routes.js';
 import dailyWashRouter from './daily-wash.routes.js';
 import notificationRouter from './notification.routes.js';
 import paymentRouter from './payment.routes.js';
@@ -15,6 +16,7 @@ import workerRouter from './worker.routes.js';
 const apiRouter = Router();
 
 apiRouter.use('/auth', authRouter);
+apiRouter.use('/complaints', complaintRouter);
 apiRouter.use('/daily-washes', dailyWashRouter);
 apiRouter.use('/notifications', notificationRouter);
 apiRouter.use('/payments', paymentRouter);
