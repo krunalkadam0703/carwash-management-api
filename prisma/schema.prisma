@@ -15,6 +15,7 @@ datasource db {
 /////////////////////////////////////////////////////
 
 enum UserRole {
+  SYSTEM_ADMIN
   OWNER
   WORKER
   CUSTOMER
@@ -58,6 +59,30 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum WorkerLiveStatus {
+  OFFLINE
+  AVAILABLE
+  BUSY
+  ON_BREAK
+}
+
+enum WashScheduleStatus {
+  SCHEDULED
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+  UNAVAILABLE
+  CANCELLED
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  CLOSED
+}
+
 enum NotificationType {
   SUBSCRIPTION_REQUEST
   SUBSCRIPTION_APPROVED
@@ -97,13 +122,20 @@ model Business {
   description String?
   ownerId     String  @unique
 
-  owner         User                  @relation("BusinessOwner", fields: [ownerId], references: [id])
-  users         User[]
-  vehicleTypes  VehicleType[]
-  services      Service[]
-  plans         Plan[]
-  vehicles      Vehicle[]
-  subscriptions VehicleSubscription[]
+  owner              User                  @relation("BusinessOwner", fields: [ownerId], references: [id])
+  users              User[]
+  vehicleTypes       VehicleType[]
+  services           Service[]
+  plans              Plan[]
+  vehicles           Vehicle[]
+  subscriptions      VehicleSubscription[]
+  bookings           Booking[]
+  payments           Payment[]
+  workerStatuses     WorkerStatus[]
+  workerTaskQueues   WorkerTaskQueue[]
+  dailyWashSchedules DailyWashSchedule[]
+  subscriptionPauses SubscriptionPause[]
+  complaints         Complaint[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -114,16 +146,19 @@ model Business {
 /////////////////////////////////////////////////////
 
 model User {
-  id            String   @id
-  name          String
-  email         String   @unique
-  emailVerified Boolean  @default(false)
-  image         String?
-  role          UserRole @default(CUSTOMER)
-  phoneNumber   String?
-  address       String?
-  isActive      Boolean  @default(true)
-  businessId    String?
+  id               String   @id
+  name             String
+  email            String   @unique
+  emailVerified    Boolean  @default(false)
+  image            String?
+  role             UserRole @default(CUSTOMER)
+  phoneNumber      String?
+  address          String?
+  currentLocation  String?
+  emergencyContact String?
+  photoUrl         String?
+  isActive         Boolean  @default(true)
+  businessId       String?
 
   business              Business?                 @relation(fields: [businessId], references: [id])
   sessions              Session[]
@@ -135,9 +170,17 @@ model User {
   workerActivities      ActivityLog[]             @relation("WorkerActivities")
   customerActivities    ActivityLog[]             @relation("CustomerActivities")
   approvedSubscriptions VehicleSubscription[]     @relation("SubscriptionApprover")
+  customerSubscriptions VehicleSubscription[]     @relation("CustomerSubscriptions")
   approvalLogs          SubscriptionApprovalLog[]
   notifications         Notification[]
   createdAssignments    WorkerAssignment[]        @relation("AssignmentCreator")
+  workerBookings        Booking[]                 @relation("WorkerBookings")
+  payments              Payment[]                 @relation("CustomerPayments")
+  workerStatus          WorkerStatus?
+  workerTaskQueues      WorkerTaskQueue[]
+  dailyWashSchedules    DailyWashSchedule[]       @relation("CustomerDailyWashSchedules")
+  subscriptionPauses    SubscriptionPause[]       @relation("CustomerSubscriptionPauses")
+  complaints            Complaint[]               @relation("CustomerComplaints")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -205,10 +248,12 @@ model VehicleType {
   businessId String
   name       String
   slug       String
+  examples   String?
+  icon       String?
   sortOrder  Int     @default(0)
   isActive   Boolean @default(true)
 
-  business Business @relation(fields: [businessId], references: [id])
+  business Business  @relation(fields: [businessId], references: [id])
   services Service[]
   plans    Plan[]
   vehicles Vehicle[]
@@ -225,19 +270,34 @@ model VehicleType {
 /////////////////////////////////////////////////////
 
 model Service {
-  id            String  @id @default(uuid())
-  businessId    String
-  vehicleTypeId String
-  name          String
-  description   String?
-  basePrice     Decimal @db.Decimal(10, 2)
+  id              String  @id @default(uuid())
+  businessId      String
+  vehicleTypeId   String
+  name            String
+  description     String?
+  basePrice       Decimal @db.Decimal(10, 2)
+  durationMinutes Int     @default(45)
+  isActive        Boolean @default(true)
 
-  business     Business    @relation(fields: [businessId], references: [id])
-  vehicleType  VehicleType @relation(fields: [vehicleTypeId], references: [id])
+  business     Business       @relation(fields: [businessId], references: [id])
+  vehicleType  VehicleType    @relation(fields: [vehicleTypeId], references: [id])
   planServices PlanService[]
+  bookings     Booking[]
+  images       ServiceImage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ServiceImage {
+  id        String   @id @default(uuid())
+  serviceId String
+  imageUrl  String
+  caption   String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
 
 /////////////////////////////////////////////////////
@@ -245,19 +305,29 @@ model Service {
 /////////////////////////////////////////////////////
 
 model Plan {
-  id            String  @id @default(uuid())
-  businessId    String
-  vehicleTypeId String
-  name          String
-  description   String?
-  category      String?
-  price         Decimal @db.Decimal(10, 2)
-  durationDays  Int
+  id               String  @id @default(uuid())
+  businessId       String
+  vehicleTypeId    String
+  name             String
+  description      String?
+  category         String?
+  price            Decimal @db.Decimal(10, 2)
+  durationDays     Int
+  washesTotal      Int     @default(0)
+  validityDays     Int?
+  durationMonths   Int?
+  dailyWash        Boolean @default(true)
+  isFeatured       Boolean @default(false)
+  isActive         Boolean @default(true)
+  interiorCleaning Boolean @default(false)
+  foamWash         Boolean @default(false)
+  ceramicCoating   Boolean @default(false)
 
-  business      Business              @relation(fields: [businessId], references: [id])
-  vehicleType   VehicleType           @relation(fields: [vehicleTypeId], references: [id])
-  services      PlanService[]
-  subscriptions VehicleSubscription[]
+  business               Business              @relation(fields: [businessId], references: [id])
+  vehicleType            VehicleType           @relation(fields: [vehicleTypeId], references: [id])
+  services               PlanService[]
+  subscriptions          VehicleSubscription[]
+  suggestedSubscriptions VehicleSubscription[] @relation("SuggestedSubscriptionPlan")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -296,14 +366,15 @@ model Vehicle {
   color         String?
   location      String?
 
-  business      Business              @relation(fields: [businessId], references: [id])
-  customer      User                  @relation("CustomerVehicles", fields: [customerId], references: [id])
-  vehicleType   VehicleType           @relation(fields: [vehicleTypeId], references: [id])
-  photos        VehiclePhoto[]
-  subscriptions VehicleSubscription[]
-  bookings      Booking[]
-  assignments   WorkerAssignment[]
-  activityLogs  ActivityLog[]
+  business           Business              @relation(fields: [businessId], references: [id])
+  customer           User                  @relation("CustomerVehicles", fields: [customerId], references: [id])
+  vehicleType        VehicleType           @relation(fields: [vehicleTypeId], references: [id])
+  photos             VehiclePhoto[]
+  subscriptions      VehicleSubscription[]
+  bookings           Booking[]
+  assignments        WorkerAssignment[]
+  activityLogs       ActivityLog[]
+  dailyWashSchedules DailyWashSchedule[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -316,9 +387,10 @@ model Vehicle {
 /////////////////////////////////////////////////////
 
 model VehiclePhoto {
-  id        String @id @default(uuid())
+  id        String  @id @default(uuid())
   vehicleId String
   imageUrl  String
+  caption   String?
 
   vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
@@ -330,35 +402,44 @@ model VehiclePhoto {
 /////////////////////////////////////////////////////
 
 model VehicleSubscription {
-  id              String             @id @default(uuid())
-  businessId      String
-  vehicleId       String
-  planId          String
-  status          SubscriptionStatus @default(REQUESTED)
-  requestedAt     DateTime           @default(now())
-  approvedAt      DateTime?
-  approvedById    String?
-  rejectedAt      DateTime?
-  rejectionReason String?
-  startDate       DateTime?
-  endDate         DateTime?
-  amount          Decimal            @db.Decimal(10, 2)
-  autoRenew       Boolean            @default(false)
+  id                  String             @id @default(uuid())
+  businessId          String
+  customerId          String
+  vehicleId           String
+  planId              String
+  suggestedPlanId     String?
+  status              SubscriptionStatus @default(REQUESTED)
+  requestedAt         DateTime           @default(now())
+  approvedAt          DateTime?
+  approvedById        String?
+  rejectedAt          DateTime?
+  rejectionReason     String?
+  startDate           DateTime?
+  endDate             DateTime?
+  amount              Decimal            @db.Decimal(10, 2)
+  autoRenew           Boolean            @default(false)
+  washesUsed          Int                @default(0)
   // FIX: was incorrectly defaulted to true
-  expiryReminderSent  Boolean @default(false)
-  renewalReminderSent Boolean @default(false)
+  expiryReminderSent  Boolean            @default(false)
+  renewalReminderSent Boolean            @default(false)
 
-  business     Business                  @relation(fields: [businessId], references: [id])
-  vehicle      Vehicle                   @relation(fields: [vehicleId], references: [id])
-  plan         Plan                      @relation(fields: [planId], references: [id])
-  approvedBy   User?                     @relation("SubscriptionApprover", fields: [approvedById], references: [id])
-  payments     Payment[]
-  approvalLogs SubscriptionApprovalLog[]
+  business           Business                  @relation(fields: [businessId], references: [id])
+  customer           User                      @relation("CustomerSubscriptions", fields: [customerId], references: [id])
+  vehicle            Vehicle                   @relation(fields: [vehicleId], references: [id])
+  plan               Plan                      @relation(fields: [planId], references: [id])
+  suggestedPlan      Plan?                     @relation("SuggestedSubscriptionPlan", fields: [suggestedPlanId], references: [id])
+  approvedBy         User?                     @relation("SubscriptionApprover", fields: [approvedById], references: [id])
+  payments           Payment[]
+  bookings           Booking[]
+  dailyWashSchedules DailyWashSchedule[]
+  pauses             SubscriptionPause[]
+  approvalLogs       SubscriptionApprovalLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([status])
+  @@index([businessId, customerId])
   @@index([vehicleId])
 }
 
@@ -368,24 +449,32 @@ model VehicleSubscription {
 
 model Payment {
   id                String        @id @default(uuid())
-  subscriptionId    String
+  businessId        String
+  customerId        String
+  subscriptionId    String?
+  bookingId         String?
   amount            Decimal       @db.Decimal(10, 2)
   status            PaymentStatus @default(PENDING)
   razorpayOrderId   String?       @unique
   razorpayPaymentId String?       @unique
   razorpaySignature String?
   paymentMethod     String?
+  upiRef            String?
   receiptId         String?       @unique
   currency          String        @default("INR")
   failureReason     String?
   paidAt            DateTime?
 
-  subscription VehicleSubscription @relation(fields: [subscriptionId], references: [id])
+  business     Business             @relation(fields: [businessId], references: [id])
+  customer     User                 @relation("CustomerPayments", fields: [customerId], references: [id])
+  subscription VehicleSubscription? @relation(fields: [subscriptionId], references: [id])
+  booking      Booking?             @relation(fields: [bookingId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([status])
+  @@index([businessId, customerId])
 }
 
 /////////////////////////////////////////////////////
@@ -393,7 +482,7 @@ model Payment {
 /////////////////////////////////////////////////////
 
 model SubscriptionApprovalLog {
-  id             String @id @default(uuid())
+  id             String  @id @default(uuid())
   subscriptionId String
   performedById  String
   action         String
@@ -410,16 +499,79 @@ model SubscriptionApprovalLog {
 /////////////////////////////////////////////////////
 
 model Booking {
-  id            String        @id @default(uuid())
-  customerId    String
-  vehicleId     String
-  scheduledDate DateTime
-  status        BookingStatus @default(PENDING)
+  id             String        @id @default(uuid())
+  businessId     String
+  customerId     String
+  vehicleId      String
+  serviceId      String?
+  subscriptionId String?
+  workerId       String?
+  receiptNumber  String?       @unique
+  scheduledDate  DateTime
+  amount         Decimal?      @db.Decimal(10, 2)
+  address        String?
+  notes          String?
+  status         BookingStatus @default(PENDING)
+  startedAt      DateTime?
+  completedAt    DateTime?
+  cancelledAt    DateTime?
+  skipReason     String?
+  rating         Int?
+  ratingComment  String?
+  priority       Int           @default(0)
+  queueDate      DateTime?
 
-  customer User    @relation(fields: [customerId], references: [id])
-  vehicle  Vehicle @relation(fields: [vehicleId], references: [id])
+  business              Business             @relation(fields: [businessId], references: [id])
+  customer              User                 @relation(fields: [customerId], references: [id])
+  vehicle               Vehicle              @relation(fields: [vehicleId], references: [id])
+  service               Service?             @relation(fields: [serviceId], references: [id])
+  subscription          VehicleSubscription? @relation(fields: [subscriptionId], references: [id])
+  worker                User?                @relation("WorkerBookings", fields: [workerId], references: [id])
+  payments              Payment[]
+  workerTaskQueue       WorkerTaskQueue?
+  dailyWashSchedules    DailyWashSchedule[]
+  complaints            Complaint[]
+  currentWorkerStatuses WorkerStatus[]       @relation("CurrentWorkerBooking")
 
   createdAt DateTime @default(now())
+
+  @@index([businessId, scheduledDate])
+  @@index([status])
+}
+
+model WorkerStatus {
+  workerId         String           @id
+  businessId       String
+  status           WorkerLiveStatus @default(OFFLINE)
+  currentBookingId String?
+  freeAt           DateTime?
+  area             String?
+  rating           Decimal?         @db.Decimal(3, 2)
+  jobsCompleted    Int              @default(0)
+  updatedAt        DateTime         @updatedAt
+
+  worker         User     @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  business       Business @relation(fields: [businessId], references: [id])
+  currentBooking Booking? @relation("CurrentWorkerBooking", fields: [currentBookingId], references: [id])
+
+  @@index([businessId, status])
+}
+
+model WorkerTaskQueue {
+  id         String   @id @default(uuid())
+  businessId String
+  workerId   String
+  bookingId  String   @unique
+  queueDate  DateTime
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id])
+  worker   User     @relation(fields: [workerId], references: [id])
+  booking  Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@unique([workerId, queueDate, position])
+  @@index([businessId, queueDate])
 }
 
 /////////////////////////////////////////////////////
@@ -539,4 +691,75 @@ model ActivityPhoto {
   activityLog ActivityLog @relation(fields: [activityLogId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+}
+
+model DailyWashSchedule {
+  id                String             @id @default(uuid())
+  businessId        String
+  subscriptionId    String
+  customerId        String
+  vehicleId         String
+  bookingId         String?
+  washDate          DateTime
+  status            WashScheduleStatus @default(SCHEDULED)
+  unavailableReason String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  business     Business            @relation(fields: [businessId], references: [id])
+  subscription VehicleSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  customer     User                @relation("CustomerDailyWashSchedules", fields: [customerId], references: [id])
+  vehicle      Vehicle             @relation(fields: [vehicleId], references: [id])
+  booking      Booking?            @relation(fields: [bookingId], references: [id])
+
+  @@unique([subscriptionId, washDate])
+  @@index([businessId, washDate])
+  @@index([status])
+}
+
+model SubscriptionPause {
+  id             String   @id @default(uuid())
+  businessId     String
+  subscriptionId String
+  customerId     String
+  startDate      DateTime
+  endDate        DateTime
+  reason         String?
+  createdAt      DateTime @default(now())
+
+  business     Business            @relation(fields: [businessId], references: [id])
+  subscription VehicleSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  customer     User                @relation("CustomerSubscriptionPauses", fields: [customerId], references: [id])
+
+  @@index([businessId, startDate, endDate])
+}
+
+model Complaint {
+  id         String          @id @default(uuid())
+  businessId String
+  customerId String
+  bookingId  String?
+  subject    String
+  message    String
+  status     ComplaintStatus @default(OPEN)
+  resolvedAt DateTime?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id])
+  customer User     @relation("CustomerComplaints", fields: [customerId], references: [id])
+  booking  Booking? @relation(fields: [bookingId], references: [id])
+
+  @@index([businessId, status])
+}
+
+model RazorpayWebhookEvent {
+  id           String    @id @default(uuid())
+  eventId      String    @unique
+  eventType    String
+  payload      Json
+  processed    Boolean   @default(false)
+  errorMessage String?
+  createdAt    DateTime  @default(now())
+  processedAt  DateTime?
 }

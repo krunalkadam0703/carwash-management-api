@@ -24,6 +24,30 @@ export class RedisService {
     await RedisClient.getClient().del(key);
   }
 
+  public async deleteMany(keys: string[]): Promise<void> {
+    if (!keys.length) {
+      return;
+    }
+
+    await Promise.all(keys.map((key) => RedisClient.getClient().del(key)));
+  }
+
+  public async deleteByPattern(pattern: string): Promise<void> {
+    const client = RedisClient.getClient();
+    const keys: string[] = [];
+
+    for await (const key of client.scanIterator({ MATCH: pattern, COUNT: 100 })) {
+      if (Array.isArray(key)) {
+        keys.push(...key);
+        continue;
+      }
+
+      keys.push(key);
+    }
+
+    await this.deleteMany(keys);
+  }
+
   public async exists(key: string): Promise<boolean> {
     return (await RedisClient.getClient().exists(key)) === 1;
   }

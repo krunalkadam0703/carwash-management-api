@@ -51,6 +51,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const cookieSecret = process.env.COOKIE_SECRET || 'local-dev-fallback-secret-12345';
 app.use(cookieParser(cookieSecret));
+app.use('/public', express.static('public'));
 
 // Fast infrastructure health-check probe (bypasses routing trees for speed)
 app.get('/health', (_req: Request, res: Response) => {
