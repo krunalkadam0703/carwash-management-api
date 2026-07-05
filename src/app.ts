@@ -10,14 +10,24 @@ const app: Application = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
 
-const allowedOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',')
+const configuredOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',')
   .map((origin) => origin.trim())
   .filter(Boolean) ?? [];
+
+const allowedOrigins = new Set([
+  ...configuredOrigins,
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:8080',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:8080',
+]);
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
-  if (origin && allowedOrigins.includes(origin)) {
+  if (origin && allowedOrigins.has(origin)) {
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Vary', 'Origin');
   }
@@ -65,4 +75,5 @@ app.use((_req: Request, res: Response) => {
 app.use(errorMiddleware);
 
 export default app;
+
 
