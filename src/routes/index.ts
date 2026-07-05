@@ -9,6 +9,7 @@ import serviceRouter from './service.routes.js';
 import subscriptionRouter from './subscription.routes.js';
 import vehicleTypeRouter from './vehicle-type.routes.js';
 import vehicleRouter from './vehicle.routes.js';
+import workerRouter from './worker.routes.js';
 
 const apiRouter = Router();
 
@@ -20,6 +21,7 @@ apiRouter.use('/services', serviceRouter);
 apiRouter.use('/plans', planRouter);
 apiRouter.use('/vehicles', vehicleRouter);
 apiRouter.use('/subscriptions', subscriptionRouter);
+apiRouter.use('/workers', workerRouter);
 
 // Base status verification endpoint to test the unified response layout
 apiRouter.get('/status', (_req: Request, res: Response) => {
