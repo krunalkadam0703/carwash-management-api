@@ -666,6 +666,7 @@ model NotificationDelivery {
 
 model AuditLog {
   id         String  @id @default(uuid())
+  businessId String?
   userId     String?
   action     String
   entityType String
@@ -675,6 +676,7 @@ model AuditLog {
 
   createdAt DateTime @default(now())
 
+  @@index([businessId])
   @@index([entityType, entityId])
 }
 
