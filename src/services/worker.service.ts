@@ -2,6 +2,7 @@ import { HttpStatus } from '../constants/http.js';
 import type { AppUser } from '../models/auth.model.js';
 import type { AssignmentStatus, WorkerAssignmentRecord, WorkerLiveStatus, WorkerStatusRecord } from '../models/worker.model.js';
 import { workerRepository } from '../repositories/worker/index.js';
+import { auditLogService } from './audit-log.service.js';
 import { AppError } from '../utils/app-error.js';
 
 const LIVE_STATUSES: WorkerLiveStatus[] = ['OFFLINE', 'AVAILABLE', 'BUSY', 'ON_BREAK'];
@@ -15,7 +16,16 @@ export class WorkerService {
 
   async updateMyStatus(user: AppUser, input: { status: WorkerLiveStatus; area?: string; freeAt?: Date }): Promise<WorkerStatusRecord> {
     if (user.role !== 'WORKER') throw new AppError('Only workers can update their live status.', HttpStatus.FORBIDDEN);
-    return workerRepository.upsertStatus({ workerId: user.id, businessId: this.requireBusinessId(user), ...input });
+    const status = await workerRepository.upsertStatus({ workerId: user.id, businessId: this.requireBusinessId(user), ...input });
+    await auditLogService.create({
+      businessId: status.businessId,
+      userId: user.id,
+      action: 'UPDATE_WORKER_STATUS',
+      entityType: 'WorkerStatus',
+      entityId: user.id,
+      newData: { status: status.status, area: status.area },
+    });
+    return status;
   }
 
   async listAssignments(user: AppUser): Promise<WorkerAssignmentRecord[]> {
@@ -29,12 +39,30 @@ export class WorkerService {
     if (!(await workerRepository.existsWorkerForBusiness(businessId, workerId))) throw new AppError('Worker was not found.', HttpStatus.NOT_FOUND);
     if (!(await workerRepository.existsVehicleForBusiness(businessId, vehicleId))) throw new AppError('Vehicle was not found.', HttpStatus.NOT_FOUND);
     await workerRepository.upsertStatus({ workerId, businessId, status: 'BUSY' });
-    return workerRepository.createAssignment({ assignedById: user.id, workerId, vehicleId });
+    const assignment = await workerRepository.createAssignment({ assignedById: user.id, workerId, vehicleId });
+    await auditLogService.create({
+      businessId,
+      userId: user.id,
+      action: 'ASSIGN_VEHICLE',
+      entityType: 'WorkerAssignment',
+      entityId: assignment.id,
+      newData: { workerId, vehicleId },
+    });
+    return assignment;
   }
 
   async updateAssignment(user: AppUser, id: string, status: AssignmentStatus): Promise<WorkerAssignmentRecord> {
     if (!['OWNER', 'WORKER'].includes(user.role)) throw new AppError('Only owners or workers can update assignments.', HttpStatus.FORBIDDEN);
-    return workerRepository.updateAssignmentStatus(id, status);
+    const assignment = await workerRepository.updateAssignmentStatus(id, status);
+    await auditLogService.create({
+      businessId: user.businessId ?? undefined,
+      userId: user.id,
+      action: 'UPDATE_ASSIGNMENT_STATUS',
+      entityType: 'WorkerAssignment',
+      entityId: assignment.id,
+      newData: { status: assignment.status },
+    });
+    return assignment;
   }
 
   liveStatus(value: unknown): WorkerLiveStatus {

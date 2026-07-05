@@ -2,6 +2,7 @@ import { HttpStatus } from '../constants/http.js';
 import type { AppUser } from '../models/auth.model.js';
 import type { ComplaintRecord, ComplaintStatus } from '../models/complaint.model.js';
 import { complaintRepository } from '../repositories/complaint/index.js';
+import { auditLogService } from './audit-log.service.js';
 import { AppError } from '../utils/app-error.js';
 
 const STATUSES: ComplaintStatus[] = ['OPEN', 'IN_REVIEW', 'RESOLVED', 'CLOSED'];
@@ -27,8 +28,19 @@ export class ComplaintService {
   async updateStatus(user: AppUser, id: string, status: ComplaintStatus): Promise<ComplaintRecord> {
     this.requireOwner(user);
     const businessId = this.requireBusinessId(user);
-    if (!(await complaintRepository.findById(businessId, id))) throw new AppError('Complaint was not found.', HttpStatus.NOT_FOUND);
-    return complaintRepository.updateStatus({ id, businessId, status });
+    const existing = await complaintRepository.findById(businessId, id);
+    if (!existing) throw new AppError('Complaint was not found.', HttpStatus.NOT_FOUND);
+    const complaint = await complaintRepository.updateStatus({ id, businessId, status });
+    await auditLogService.create({
+      businessId,
+      userId: user.id,
+      action: 'UPDATE_COMPLAINT_STATUS',
+      entityType: 'Complaint',
+      entityId: complaint.id,
+      oldData: { status: existing.status },
+      newData: { status: complaint.status },
+    });
+    return complaint;
   }
 
   text(value: unknown, field: string): string {

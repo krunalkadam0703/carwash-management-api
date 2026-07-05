@@ -2,6 +2,7 @@ import { HttpStatus } from '../constants/http.js';
 import type { AppUser } from '../models/auth.model.js';
 import type { SubscriptionRecord } from '../models/subscription.model.js';
 import { subscriptionRepository } from '../repositories/subscription/index.js';
+import { auditLogService } from './audit-log.service.js';
 import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/app-error.js';
 
@@ -44,6 +45,15 @@ export class SubscriptionService {
     this.requireOwner(user);
     const row = await this.requireRequested(this.requireBusinessId(user), id);
     const subscription = await subscriptionRepository.updateStatus({ id, businessId: row.businessId, status: 'APPROVED', approvedById: user.id }, user.id, remarks);
+    await auditLogService.create({
+      businessId: row.businessId,
+      userId: user.id,
+      action: 'APPROVE_SUBSCRIPTION',
+      entityType: 'VehicleSubscription',
+      entityId: subscription.id,
+      oldData: { status: row.status },
+      newData: { status: subscription.status },
+    });
     await notificationService.create({
       userId: subscription.customerId,
       type: 'SUBSCRIPTION_APPROVED',
@@ -59,6 +69,15 @@ export class SubscriptionService {
     this.requireOwner(user);
     const row = await this.requireRequested(this.requireBusinessId(user), id);
     const subscription = await subscriptionRepository.updateStatus({ id, businessId: row.businessId, status: 'REJECTED', rejectedAt: new Date(), rejectionReason: reason }, user.id, reason);
+    await auditLogService.create({
+      businessId: row.businessId,
+      userId: user.id,
+      action: 'REJECT_SUBSCRIPTION',
+      entityType: 'VehicleSubscription',
+      entityId: subscription.id,
+      oldData: { status: row.status },
+      newData: { status: subscription.status, rejectionReason: reason },
+    });
     await notificationService.create({
       userId: subscription.customerId,
       type: 'SUBSCRIPTION_REJECTED',
