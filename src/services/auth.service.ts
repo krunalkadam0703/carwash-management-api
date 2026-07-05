@@ -25,6 +25,7 @@ export type UpdateCustomerProfileInput = {
   userId: string;
   phoneNumber: string;
   address: string;
+  businessId?: string;
 };
 
 export interface UserRepositoryPort {
@@ -37,6 +38,7 @@ export interface UserRepositoryPort {
 
 export interface BusinessRepositoryPort {
   findByOwnerId(ownerId: string): Promise<BusinessRecord | null>;
+  findFirst(): Promise<BusinessRecord | null>;
   createOwnerBusiness(
     input: CreateOwnerBusinessInput,
   ): Promise<{ user: AppUser; business: BusinessRecord }>;
@@ -68,6 +70,7 @@ export interface AuthServiceContract {
     user: AppUser;
     phoneNumber: string;
     address: string;
+    businessId?: string;
   }): Promise<AppUser>;
 }
 
@@ -165,15 +168,19 @@ export class AuthService implements AuthServiceContract {
     user: AppUser;
     phoneNumber: string;
     address: string;
+    businessId?: string;
   }): Promise<AppUser> {
     if (input.user.role !== 'CUSTOMER') {
       throw new AppError('Only customer accounts can use customer onboarding.', HttpStatus.FORBIDDEN);
     }
 
+    const businessId = input.businessId ?? input.user.businessId ?? (await this.dependencies.businessRepository.findFirst())?.id;
+    if (!businessId) throw new AppError('No business account is available for customer onboarding.', HttpStatus.BAD_REQUEST);
     return this.dependencies.userRepository.updateCustomerProfile({
       userId: input.user.id,
       phoneNumber: input.phoneNumber,
       address: input.address,
+      businessId,
     });
   }
 
@@ -183,7 +190,7 @@ export class AuthService implements AuthServiceContract {
     }
 
     if (user.role === 'CUSTOMER') {
-      return Boolean(user.phoneNumber && user.address);
+      return Boolean(user.businessId && user.phoneNumber && user.address);
     }
 
     return user.isActive;

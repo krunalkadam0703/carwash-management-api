@@ -1,4 +1,4 @@
-import type { AppUser } from '../../models/auth.model.js';
+import type { AppRole, AppUser } from '../../models/auth.model.js';
 import { userCacheRepository } from './cache.js';
 import { userPersistentStorageRepository } from './persistent-storage.js';
 
@@ -23,6 +23,10 @@ export class UserRepository {
     return userPersistentStorageRepository.findByEmail(email);
   }
 
+  findManyByBusinessAndRole(businessId: string, role: AppRole): Promise<AppUser[]> {
+    return userPersistentStorageRepository.findManyByBusinessAndRole(businessId, role);
+  }
+
   async createInactiveWorker(input: {
     businessId: string;
     name: string;
@@ -45,8 +49,15 @@ export class UserRepository {
     userId: string;
     phoneNumber: string;
     address: string;
+    businessId?: string;
   }): Promise<AppUser> {
     const user = await userPersistentStorageRepository.updateCustomerProfile(input);
+    await userCacheRepository.save(user);
+    return user;
+  }
+
+  async updateProfile(input: { userId: string; name?: string; phoneNumber?: string | null; address?: string | null }): Promise<AppUser> {
+    const user = await userPersistentStorageRepository.updateProfile(input);
     await userCacheRepository.save(user);
     return user;
   }

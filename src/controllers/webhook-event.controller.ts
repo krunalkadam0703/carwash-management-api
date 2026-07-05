@@ -13,10 +13,13 @@ export class WebhookEventController {
   };
 
   ingestRazorpay = async (req: Request, res: Response): Promise<void> => {
-    const event = await webhookEventService.ingest({
+    const request = req as Request & { rawBody?: Buffer };
+    const event = await webhookEventService.ingestRazorpay({
       eventId: webhookEventService.text(req.body.eventId ?? req.body.id, 'eventId'),
       eventType: webhookEventService.text(req.body.eventType ?? req.body.event, 'eventType'),
       payload: req.body,
+      rawBody: request.rawBody,
+      signature: typeof req.headers['x-razorpay-signature'] === 'string' ? req.headers['x-razorpay-signature'] : undefined,
     });
     ApiResponse.success(res, { event }, 'Webhook event recorded.', HttpStatus.CREATED);
   };

@@ -3,6 +3,7 @@ import type { AppUser } from '../models/auth.model.js';
 import type { WebhookEventRecord } from '../models/webhook-event.model.js';
 import { webhookEventRepository } from '../repositories/webhook-event/index.js';
 import { AppError } from '../utils/app-error.js';
+import { createHmac } from 'node:crypto';
 
 export class WebhookEventService {
   async list(user: AppUser): Promise<WebhookEventRecord[]> {
@@ -14,6 +15,11 @@ export class WebhookEventService {
     const existing = await webhookEventRepository.findByEventId(input.eventId);
     if (existing) return existing;
     return webhookEventRepository.create(input);
+  }
+
+  async ingestRazorpay(input: { eventId: string; eventType: string; payload: unknown; rawBody?: Buffer; signature?: string }): Promise<WebhookEventRecord> {
+    this.verifyRazorpaySignature(input.rawBody, input.signature);
+    return this.ingest(input);
   }
 
   async markProcessed(user: AppUser, id: string): Promise<WebhookEventRecord> {
@@ -41,6 +47,14 @@ export class WebhookEventService {
 
   private requireOwnerOrAdmin(user: AppUser): void {
     if (!['OWNER', 'SYSTEM_ADMIN'].includes(user.role)) throw new AppError('Only owners can manage webhook events.', HttpStatus.FORBIDDEN);
+  }
+
+  private verifyRazorpaySignature(rawBody: Buffer | undefined, signature: string | undefined): void {
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!secret) return;
+    if (!rawBody || !signature) throw new AppError('Razorpay webhook signature is required.', HttpStatus.BAD_REQUEST);
+    const expected = createHmac('sha256', secret).update(rawBody).digest('hex');
+    if (expected !== signature) throw new AppError('Invalid Razorpay webhook signature.', HttpStatus.BAD_REQUEST);
   }
 }
 

@@ -13,8 +13,8 @@ export class PaymentController {
   };
 
   createSubscriptionPayment = async (req: Request, res: Response): Promise<void> => {
-    const payment = await paymentService.createForSubscription(this.user(req), paymentService.text(req.params.subscriptionId, 'subscriptionId'));
-    ApiResponse.success(res, { payment }, 'Subscription payment created.', HttpStatus.CREATED);
+    const result = await paymentService.createForSubscription(this.user(req), paymentService.text(req.params.subscriptionId, 'subscriptionId'));
+    ApiResponse.success(res, result, 'Subscription payment created.', HttpStatus.CREATED);
   };
 
   complete = async (req: Request, res: Response): Promise<void> => {

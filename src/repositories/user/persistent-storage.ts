@@ -5,6 +5,7 @@ import type { AppRole, AppUser } from '../../models/auth.model.js';
 
 type UserDelegate = {
   findUnique(args: unknown): Promise<AppUser | null>;
+  findMany(args: unknown): Promise<AppUser[]>;
   create(args: unknown): Promise<AppUser>;
   update(args: unknown): Promise<AppUser>;
 };
@@ -22,6 +23,10 @@ export class UserPersistentStorageRepository {
 
   findByEmail(email: string): Promise<AppUser | null> {
     return db.user.findUnique({ where: { email } });
+  }
+
+  findManyByBusinessAndRole(businessId: string, role: AppRole): Promise<AppUser[]> {
+    return db.user.findMany({ where: { businessId, role }, orderBy: { createdAt: 'desc' } });
   }
 
   createInactiveWorker(input: {
@@ -57,13 +62,26 @@ export class UserPersistentStorageRepository {
     userId: string;
     phoneNumber: string;
     address: string;
+    businessId?: string;
   }): Promise<AppUser> {
     return db.user.update({
       where: { id: input.userId },
       data: {
         phoneNumber: input.phoneNumber,
         address: input.address,
+        businessId: input.businessId,
         isActive: true,
+      },
+    });
+  }
+
+  updateProfile(input: { userId: string; name?: string; phoneNumber?: string | null; address?: string | null }): Promise<AppUser> {
+    return db.user.update({
+      where: { id: input.userId },
+      data: {
+        name: input.name,
+        phoneNumber: input.phoneNumber,
+        address: input.address,
       },
     });
   }

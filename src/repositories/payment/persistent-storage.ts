@@ -1,5 +1,11 @@
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
-import type { CompletePaymentInput, CreateSubscriptionPaymentInput, FailPaymentInput, PaymentRecord } from '../../models/payment.model.js';
+import type {
+  AttachRazorpayOrderInput,
+  CompletePaymentInput,
+  CreateSubscriptionPaymentInput,
+  FailPaymentInput,
+  PaymentRecord,
+} from '../../models/payment.model.js';
 
 type PrismaPayment = Omit<PaymentRecord, 'amount'> & { amount: { toString(): string } };
 type SubscriptionForPayment = {
@@ -50,6 +56,14 @@ export class PaymentPersistentStorageRepository {
       await tx.vehicleSubscription.update({ where: { id: input.subscriptionId }, data: { status: 'PAYMENT_PENDING' } });
       return mapPayment(row);
     });
+  }
+
+  async attachRazorpayOrder(input: AttachRazorpayOrderInput): Promise<PaymentRecord> {
+    const row = await db.payment.update({
+      where: { id: input.id },
+      data: { razorpayOrderId: input.razorpayOrderId },
+    });
+    return mapPayment(row);
   }
 
   async complete(input: CompletePaymentInput, durationDays: number): Promise<PaymentRecord> {

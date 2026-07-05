@@ -3,7 +3,9 @@ import { ApiResponse } from '../utils/api-response.js';
 import { HttpStatus } from '../constants/http.js';
 import auditLogRouter from './audit-log.routes.js';
 import authRouter from './auth.routes.js';
+import bookingRouter from './booking.routes.js';
 import complaintRouter from './complaint.routes.js';
+import customerRouter from './customer.routes.js';
 import dailyWashRouter from './daily-wash.routes.js';
 import dashboardRouter from './dashboard.routes.js';
 import imageRouter from './image.routes.js';
@@ -23,7 +25,9 @@ const apiRouter = Router();
 
 apiRouter.use('/audit-logs', auditLogRouter);
 apiRouter.use('/auth', authRouter);
+apiRouter.use('/bookings', bookingRouter);
 apiRouter.use('/complaints', complaintRouter);
+apiRouter.use('/customers', customerRouter);
 apiRouter.use('/daily-washes', dailyWashRouter);
 apiRouter.use('/dashboard', dashboardRouter);
 apiRouter.use('/images', imageRouter);
@@ -49,6 +53,4 @@ apiRouter.get('/status', (_req: Request, res: Response) => {
   );
 });
 
-// Your future backend feature modules will slide in here cleanly:
-// apiRouter.use('/bookings', bookingRouter);
 export default apiRouter;

@@ -20,6 +20,10 @@ export class BusinessRepository {
     return business;
   }
 
+  findFirst(): Promise<BusinessRecord | null> {
+    return businessPersistentStorageRepository.findFirst();
+  }
+
   async createOwnerBusiness(input: {
     user: AppUser;
     businessName: string;

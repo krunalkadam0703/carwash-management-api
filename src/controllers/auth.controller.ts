@@ -30,6 +30,7 @@ export class AuthController {
       user: this.getSessionUser(req),
       phoneNumber: this.authService.requireText(req.body.phoneNumber, 'phoneNumber'),
       address: this.authService.requireText(req.body.address, 'address'),
+      businessId: this.authService.optionalText(req.body.businessId),
     });
 
     ApiResponse.success(res, { user: updatedUser }, 'Customer account completed.');

@@ -1,4 +1,10 @@
-import type { CompletePaymentInput, CreateSubscriptionPaymentInput, FailPaymentInput, PaymentRecord } from '../../models/payment.model.js';
+import type {
+  AttachRazorpayOrderInput,
+  CompletePaymentInput,
+  CreateSubscriptionPaymentInput,
+  FailPaymentInput,
+  PaymentRecord,
+} from '../../models/payment.model.js';
 import { paymentPersistentStorageRepository } from './persistent-storage.js';
 
 export class PaymentRepository {
@@ -16,6 +22,10 @@ export class PaymentRepository {
 
   createSubscriptionPayment(input: CreateSubscriptionPaymentInput): Promise<PaymentRecord> {
     return paymentPersistentStorageRepository.createSubscriptionPayment(input);
+  }
+
+  attachRazorpayOrder(input: AttachRazorpayOrderInput): Promise<PaymentRecord> {
+    return paymentPersistentStorageRepository.attachRazorpayOrder(input);
   }
 
   complete(input: CompletePaymentInput, durationDays: number): Promise<PaymentRecord> {

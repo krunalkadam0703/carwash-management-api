@@ -23,6 +23,10 @@ export class BusinessPersistentStorageRepository {
     return db.business.findFirst({ where: { ownerId } });
   }
 
+  findFirst(): Promise<BusinessRecord | null> {
+    return db.business.findFirst({ orderBy: { createdAt: 'asc' } });
+  }
+
   createOwnerBusiness(input: {
     user: AppUser;
     businessName: string;

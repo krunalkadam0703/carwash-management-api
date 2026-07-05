@@ -21,12 +21,30 @@ export type PaymentRecord = {
   updatedAt: Date;
 };
 
+export type RazorpayCheckoutOrder = {
+  keyId: string;
+  orderId: string;
+  amount: number;
+  currency: string;
+};
+
+export type StartSubscriptionPaymentResult = {
+  payment: PaymentRecord;
+  gateway?: RazorpayCheckoutOrder;
+};
+
 export type CreateSubscriptionPaymentInput = {
   businessId: string;
   customerId: string;
   subscriptionId: string;
   amount: number;
   receiptId?: string;
+};
+
+export type AttachRazorpayOrderInput = {
+  id: string;
+  businessId: string;
+  razorpayOrderId: string;
 };
 
 export type CompletePaymentInput = {
