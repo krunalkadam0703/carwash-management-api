@@ -9,6 +9,7 @@ import notificationRouter from './notification.routes.js';
 import paymentRouter from './payment.routes.js';
 import planRouter from './plan.routes.js';
 import serviceRouter from './service.routes.js';
+import subscriptionPauseRouter from './subscription-pause.routes.js';
 import subscriptionRouter from './subscription.routes.js';
 import vehicleTypeRouter from './vehicle-type.routes.js';
 import vehicleRouter from './vehicle.routes.js';
@@ -26,6 +27,7 @@ apiRouter.use('/vehicle-types', vehicleTypeRouter);
 apiRouter.use('/services', serviceRouter);
 apiRouter.use('/plans', planRouter);
 apiRouter.use('/vehicles', vehicleRouter);
+apiRouter.use('/subscription-pauses', subscriptionPauseRouter);
 apiRouter.use('/subscriptions', subscriptionRouter);
 apiRouter.use('/workers', workerRouter);
 
