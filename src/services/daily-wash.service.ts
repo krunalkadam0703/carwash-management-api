@@ -2,6 +2,7 @@ import { HttpStatus } from '../constants/http.js';
 import type { AppUser } from '../models/auth.model.js';
 import type { DailyWashRecord } from '../models/daily-wash.model.js';
 import { dailyWashRepository } from '../repositories/daily-wash/index.js';
+import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/app-error.js';
 
 export class DailyWashService {
@@ -17,14 +18,32 @@ export class DailyWashService {
 
   async start(user: AppUser, id: string): Promise<DailyWashRecord> {
     this.requireWorkerOrOwner(user);
-    await this.requireDailyWash(user, id);
-    return dailyWashRepository.updateStatus({ id, businessId: this.requireBusinessId(user), status: 'IN_PROGRESS' });
+    const row = await this.requireDailyWash(user, id);
+    const dailyWash = await dailyWashRepository.updateStatus({ id, businessId: this.requireBusinessId(user), status: 'IN_PROGRESS' });
+    await notificationService.create({
+      userId: row.customerId,
+      type: 'CAR_WASH_STARTED',
+      title: 'Car wash started',
+      message: 'Your scheduled car wash has started.',
+      actionUrl: `/customer/calendar`,
+      metadata: { dailyWashId: dailyWash.id },
+    });
+    return dailyWash;
   }
 
   async complete(user: AppUser, id: string): Promise<DailyWashRecord> {
     this.requireWorkerOrOwner(user);
-    await this.requireDailyWash(user, id);
-    return dailyWashRepository.updateStatus({ id, businessId: this.requireBusinessId(user), status: 'COMPLETED' });
+    const row = await this.requireDailyWash(user, id);
+    const dailyWash = await dailyWashRepository.updateStatus({ id, businessId: this.requireBusinessId(user), status: 'COMPLETED' });
+    await notificationService.create({
+      userId: row.customerId,
+      type: 'CAR_WASH_COMPLETED',
+      title: 'Car wash completed',
+      message: 'Your scheduled car wash has been completed.',
+      actionUrl: `/customer/calendar`,
+      metadata: { dailyWashId: dailyWash.id },
+    });
+    return dailyWash;
   }
 
   async unavailable(user: AppUser, id: string, reason?: string): Promise<DailyWashRecord> {

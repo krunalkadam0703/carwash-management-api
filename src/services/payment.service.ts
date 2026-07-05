@@ -2,6 +2,7 @@ import { HttpStatus } from '../constants/http.js';
 import type { AppUser } from '../models/auth.model.js';
 import type { PaymentRecord } from '../models/payment.model.js';
 import { paymentRepository } from '../repositories/payment/index.js';
+import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/app-error.js';
 
 export class PaymentService {
@@ -33,13 +34,31 @@ export class PaymentService {
 
     const subscription = await paymentRepository.findSubscription(payment.businessId, payment.subscriptionId);
     if (!subscription) throw new AppError('Subscription was not found.', HttpStatus.NOT_FOUND);
-    return paymentRepository.complete({ ...input, id, businessId: payment.businessId }, subscription.plan.durationDays);
+    const completed = await paymentRepository.complete({ ...input, id, businessId: payment.businessId }, subscription.plan.durationDays);
+    await notificationService.create({
+      userId: completed.customerId,
+      type: 'PAYMENT_SUCCESS',
+      title: 'Payment successful',
+      message: 'Your subscription is now active.',
+      actionUrl: `/customer/plans`,
+      metadata: { paymentId: completed.id, subscriptionId: completed.subscriptionId },
+    });
+    return completed;
   }
 
   async fail(user: AppUser, id: string, failureReason?: string): Promise<PaymentRecord> {
     const payment = await this.requirePayment(user, id);
     if (payment.status !== 'PENDING') throw new AppError('Only pending payments can be failed.', HttpStatus.CONFLICT);
-    return paymentRepository.fail({ id, businessId: payment.businessId, failureReason });
+    const failed = await paymentRepository.fail({ id, businessId: payment.businessId, failureReason });
+    await notificationService.create({
+      userId: failed.customerId,
+      type: 'PAYMENT_FAILED',
+      title: 'Payment failed',
+      message: failureReason ?? 'Your payment could not be completed.',
+      actionUrl: `/customer/plans`,
+      metadata: { paymentId: failed.id, subscriptionId: failed.subscriptionId },
+    });
+    return failed;
   }
 
   text(value: unknown, field: string): string {

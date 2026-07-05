@@ -2,6 +2,7 @@ import { HttpStatus } from '../constants/http.js';
 import type { AppUser } from '../models/auth.model.js';
 import type { SubscriptionRecord } from '../models/subscription.model.js';
 import { subscriptionRepository } from '../repositories/subscription/index.js';
+import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/app-error.js';
 
 export class SubscriptionService {
@@ -42,13 +43,31 @@ export class SubscriptionService {
   async approve(user: AppUser, id: string, remarks?: string): Promise<SubscriptionRecord> {
     this.requireOwner(user);
     const row = await this.requireRequested(this.requireBusinessId(user), id);
-    return subscriptionRepository.updateStatus({ id, businessId: row.businessId, status: 'APPROVED', approvedById: user.id }, user.id, remarks);
+    const subscription = await subscriptionRepository.updateStatus({ id, businessId: row.businessId, status: 'APPROVED', approvedById: user.id }, user.id, remarks);
+    await notificationService.create({
+      userId: subscription.customerId,
+      type: 'SUBSCRIPTION_APPROVED',
+      title: 'Subscription approved',
+      message: 'Your subscription request was approved. Please complete payment to activate it.',
+      actionUrl: `/customer/plans`,
+      metadata: { subscriptionId: subscription.id },
+    });
+    return subscription;
   }
 
   async reject(user: AppUser, id: string, reason: string): Promise<SubscriptionRecord> {
     this.requireOwner(user);
     const row = await this.requireRequested(this.requireBusinessId(user), id);
-    return subscriptionRepository.updateStatus({ id, businessId: row.businessId, status: 'REJECTED', rejectedAt: new Date(), rejectionReason: reason }, user.id, reason);
+    const subscription = await subscriptionRepository.updateStatus({ id, businessId: row.businessId, status: 'REJECTED', rejectedAt: new Date(), rejectionReason: reason }, user.id, reason);
+    await notificationService.create({
+      userId: subscription.customerId,
+      type: 'SUBSCRIPTION_REJECTED',
+      title: 'Subscription rejected',
+      message: reason,
+      actionUrl: `/customer/plans`,
+      metadata: { subscriptionId: subscription.id },
+    });
+    return subscription;
   }
 
   text(value: unknown, field: string): string {
