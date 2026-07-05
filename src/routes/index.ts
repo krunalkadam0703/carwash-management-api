@@ -5,6 +5,7 @@ import authRouter from './auth.routes.js';
 import planRouter from './plan.routes.js';
 import serviceRouter from './service.routes.js';
 import vehicleTypeRouter from './vehicle-type.routes.js';
+import vehicleRouter from './vehicle.routes.js';
 
 const apiRouter = Router();
 
@@ -12,6 +13,7 @@ apiRouter.use('/auth', authRouter);
 apiRouter.use('/vehicle-types', vehicleTypeRouter);
 apiRouter.use('/services', serviceRouter);
 apiRouter.use('/plans', planRouter);
+apiRouter.use('/vehicles', vehicleRouter);
 
 // Base status verification endpoint to test the unified response layout
 apiRouter.get('/status', (_req: Request, res: Response) => {
