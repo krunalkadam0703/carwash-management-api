@@ -45,8 +45,11 @@ export class PaymentPersistentStorageRepository {
   }
 
   async createSubscriptionPayment(input: CreateSubscriptionPaymentInput): Promise<PaymentRecord> {
-    const row = await db.payment.create({ data: { ...input, status: 'PENDING', currency: 'INR' } });
-    return mapPayment(row);
+    return db.$transaction(async (tx) => {
+      const row = await tx.payment.create({ data: { ...input, status: 'PENDING', currency: 'INR' } });
+      await tx.vehicleSubscription.update({ where: { id: input.subscriptionId }, data: { status: 'PAYMENT_PENDING' } });
+      return mapPayment(row);
+    });
   }
 
   async complete(input: CompletePaymentInput, durationDays: number): Promise<PaymentRecord> {

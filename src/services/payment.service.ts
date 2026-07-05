@@ -2,6 +2,7 @@ import { HttpStatus } from '../constants/http.js';
 import type { AppUser } from '../models/auth.model.js';
 import type { PaymentRecord } from '../models/payment.model.js';
 import { paymentRepository } from '../repositories/payment/index.js';
+import { auditLogService } from './audit-log.service.js';
 import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/app-error.js';
 
@@ -18,13 +19,30 @@ export class PaymentService {
     if (!subscription || subscription.customerId !== user.id) throw new AppError('Subscription was not found.', HttpStatus.NOT_FOUND);
     if (!['APPROVED', 'PAYMENT_PENDING'].includes(subscription.status)) throw new AppError('Subscription is not ready for payment.', HttpStatus.CONFLICT);
 
-    return paymentRepository.createSubscriptionPayment({
+    const payment = await paymentRepository.createSubscriptionPayment({
       businessId,
       customerId: user.id,
       subscriptionId,
       amount: Number(subscription.amount.toString()),
       receiptId: `sub_${subscriptionId}_${Date.now()}`,
     });
+    await auditLogService.create({
+      businessId,
+      userId: user.id,
+      action: 'START_SUBSCRIPTION_PAYMENT',
+      entityType: 'Payment',
+      entityId: payment.id,
+      newData: { subscriptionId, amount: payment.amount },
+    });
+    await notificationService.create({
+      userId: user.id,
+      type: 'PAYMENT_PENDING',
+      title: 'Payment started',
+      message: 'Your subscription payment is pending.',
+      actionUrl: `/customer/plans`,
+      metadata: { paymentId: payment.id, subscriptionId },
+    });
+    return payment;
   }
 
   async complete(user: AppUser, id: string, input: { razorpayPaymentId?: string; razorpaySignature?: string; paymentMethod?: string; upiRef?: string }): Promise<PaymentRecord> {
@@ -35,6 +53,15 @@ export class PaymentService {
     const subscription = await paymentRepository.findSubscription(payment.businessId, payment.subscriptionId);
     if (!subscription) throw new AppError('Subscription was not found.', HttpStatus.NOT_FOUND);
     const completed = await paymentRepository.complete({ ...input, id, businessId: payment.businessId }, subscription.plan.durationDays);
+    await auditLogService.create({
+      businessId: completed.businessId,
+      userId: user.id,
+      action: 'COMPLETE_PAYMENT',
+      entityType: 'Payment',
+      entityId: completed.id,
+      oldData: { status: payment.status },
+      newData: { status: completed.status, subscriptionId: completed.subscriptionId },
+    });
     await notificationService.create({
       userId: completed.customerId,
       type: 'PAYMENT_SUCCESS',
@@ -50,6 +77,15 @@ export class PaymentService {
     const payment = await this.requirePayment(user, id);
     if (payment.status !== 'PENDING') throw new AppError('Only pending payments can be failed.', HttpStatus.CONFLICT);
     const failed = await paymentRepository.fail({ id, businessId: payment.businessId, failureReason });
+    await auditLogService.create({
+      businessId: failed.businessId,
+      userId: user.id,
+      action: 'FAIL_PAYMENT',
+      entityType: 'Payment',
+      entityId: failed.id,
+      oldData: { status: payment.status },
+      newData: { status: failed.status, failureReason },
+    });
     await notificationService.create({
       userId: failed.customerId,
       type: 'PAYMENT_FAILED',
