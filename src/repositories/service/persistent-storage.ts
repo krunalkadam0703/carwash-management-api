@@ -76,6 +76,8 @@ export class ServicePersistentStorageRepository {
         name: input.name,
         description: input.description,
         basePrice: input.basePrice,
+        durationMinutes: input.durationMinutes,
+        isActive: input.isActive,
       },
     });
 

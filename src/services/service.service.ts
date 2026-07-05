@@ -119,6 +119,24 @@ export class ServiceService {
     return this.parseRequiredPrice(value);
   }
 
+  parseOptionalDuration(value: unknown): number | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+
+    const duration = Number(value);
+
+    if (!Number.isInteger(duration) || duration <= 0) {
+      throw new AppError('durationMinutes must be a positive integer.', HttpStatus.BAD_REQUEST);
+    }
+
+    return duration;
+  }
+
+  parseOptionalBoolean(value: unknown): boolean | undefined {
+    return typeof value === 'boolean' ? value : undefined;
+  }
+
   private async ensureVehicleTypeBelongsToBusiness(
     businessId: string,
     vehicleTypeId: string,

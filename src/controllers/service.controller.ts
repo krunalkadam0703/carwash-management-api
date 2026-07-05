@@ -27,6 +27,8 @@ export class ServiceController {
       name: serviceService.parseRequiredText(req.body.name, 'name'),
       description: serviceService.parseOptionalText(req.body.description),
       basePrice: serviceService.parseRequiredPrice(req.body.basePrice),
+      durationMinutes: serviceService.parseOptionalDuration(req.body.durationMinutes),
+      isActive: serviceService.parseOptionalBoolean(req.body.isActive),
     });
 
     ApiResponse.success(res, { service }, 'Service created.', HttpStatus.CREATED);
@@ -41,6 +43,8 @@ export class ServiceController {
         name: serviceService.parseOptionalText(req.body.name),
         description: serviceService.parseNullableText(req.body.description),
         basePrice: serviceService.parseOptionalPrice(req.body.basePrice),
+        durationMinutes: serviceService.parseOptionalDuration(req.body.durationMinutes),
+        isActive: serviceService.parseOptionalBoolean(req.body.isActive),
       },
     );
 
