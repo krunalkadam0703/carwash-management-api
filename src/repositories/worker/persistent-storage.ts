@@ -1,7 +1,11 @@
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
-import type { CreateWorkerAssignmentInput, UpdateWorkerStatusInput, WorkerAssignmentRecord, WorkerStatusRecord } from '../../models/worker.model.js';
+import type { CreateWorkerAssignmentInput, UpdateWorkerStatusInput, WorkerAssignmentRecord, WorkerLiveStatus, WorkerStatusRecord } from '../../models/worker.model.js';
 
-type UserDelegate = { findFirst(args: unknown): Promise<{ id: string } | null> };
+type WorkerUser = { id: string; businessId?: string | null; name: string; email: string; phoneNumber?: string | null; isActive: boolean };
+type UserDelegate = {
+  findFirst(args: unknown): Promise<{ id: string } | null>;
+  findMany(args: unknown): Promise<WorkerUser[]>;
+};
 type VehicleDelegate = { findFirst(args: unknown): Promise<{ id: string } | null> };
 type WorkerStatusDelegate = {
   findMany(args: unknown): Promise<WorkerStatusRecord[]>;
@@ -22,8 +26,30 @@ type AppDb = {
 const db = prisma as unknown as AppDb;
 
 export class WorkerPersistentStorageRepository {
-  findStatusesByBusinessId(businessId: string): Promise<WorkerStatusRecord[]> {
-    return db.workerStatus.findMany({ where: { businessId }, orderBy: { updatedAt: 'desc' } });
+  async findStatusesByBusinessId(businessId: string): Promise<WorkerStatusRecord[]> {
+    const [workers, statuses] = await Promise.all([
+      db.user.findMany({ where: { businessId, role: 'WORKER' }, orderBy: { createdAt: 'desc' } }),
+      db.workerStatus.findMany({ where: { businessId }, orderBy: { updatedAt: 'desc' } }),
+    ]);
+    const statusMap = new Map(statuses.map((status) => [status.workerId, status]));
+    return workers.map((worker) => {
+      const status = statusMap.get(worker.id);
+      return {
+        workerId: worker.id,
+        businessId,
+        name: worker.name,
+        email: worker.email,
+        phoneNumber: worker.phoneNumber,
+        isActive: worker.isActive,
+        status: status?.status ?? ('OFFLINE' satisfies WorkerLiveStatus),
+        currentBookingId: status?.currentBookingId,
+        freeAt: status?.freeAt,
+        area: status?.area,
+        rating: status?.rating,
+        jobsCompleted: status?.jobsCompleted ?? 0,
+        updatedAt: status?.updatedAt ?? new Date(0),
+      };
+    });
   }
 
   async existsWorkerForBusiness(businessId: string, workerId: string): Promise<boolean> {

@@ -4,6 +4,10 @@ export type AssignmentStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
 export type WorkerStatusRecord = {
   workerId: string;
   businessId: string;
+  name?: string;
+  email?: string;
+  phoneNumber?: string | null;
+  isActive?: boolean;
   status: WorkerLiveStatus;
   currentBookingId?: string | null;
   freeAt?: Date | null;
