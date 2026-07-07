@@ -6,7 +6,6 @@ export type DailyWashRecord = {
   subscriptionId: string;
   customerId: string;
   vehicleId: string;
-  bookingId?: string | null;
   washDate: Date;
   status: DailyWashStatus;
   unavailableReason?: string | null;

@@ -27,6 +27,7 @@ export class VehicleController {
       model: vehicleService.optText(req.body.model),
       color: vehicleService.optText(req.body.color),
       location: vehicleService.optText(req.body.location),
+      availableTimeSlot: vehicleService.optText(req.body.availableTimeSlot),
     });
 
     ApiResponse.success(res, { vehicle }, 'Vehicle created.', HttpStatus.CREATED);
@@ -42,6 +43,7 @@ export class VehicleController {
       model: vehicleService.nullableText(req.body.model),
       color: vehicleService.nullableText(req.body.color),
       location: vehicleService.nullableText(req.body.location),
+      availableTimeSlot: vehicleService.nullableText(req.body.availableTimeSlot),
     });
 
     ApiResponse.success(res, { vehicle }, 'Vehicle updated.');

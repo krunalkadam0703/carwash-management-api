@@ -14,7 +14,6 @@ export class ComplaintController {
 
   create = async (req: Request, res: Response): Promise<void> => {
     const complaint = await complaintService.create(this.user(req), {
-      bookingId: complaintService.optText(req.body.bookingId),
       subject: complaintService.text(req.body.subject, 'subject'),
       message: complaintService.text(req.body.message, 'message'),
     });

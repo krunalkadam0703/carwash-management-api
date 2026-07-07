@@ -5,7 +5,6 @@ export type PaymentRecord = {
   businessId: string;
   customerId: string;
   subscriptionId?: string | null;
-  bookingId?: string | null;
   amount: string;
   status: PaymentStatus;
   razorpayOrderId?: string | null;

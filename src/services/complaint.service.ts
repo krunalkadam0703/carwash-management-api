@@ -13,15 +13,9 @@ export class ComplaintService {
     return complaintRepository.findManyByBusinessId(businessId, user.role === 'CUSTOMER' ? user.id : undefined);
   }
 
-  async create(user: AppUser, input: { bookingId?: string; subject: string; message: string }): Promise<ComplaintRecord> {
+  async create(user: AppUser, input: { subject: string; message: string }): Promise<ComplaintRecord> {
     if (user.role !== 'CUSTOMER') throw new AppError('Only customers can create complaints.', HttpStatus.FORBIDDEN);
     const businessId = this.requireBusinessId(user);
-
-    if (input.bookingId) {
-      const booking = await complaintRepository.findBooking(businessId, input.bookingId);
-      if (!booking || booking.customerId !== user.id) throw new AppError('Booking was not found.', HttpStatus.NOT_FOUND);
-    }
-
     return complaintRepository.create({ ...input, businessId, customerId: user.id });
   }
 

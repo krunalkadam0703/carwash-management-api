@@ -42,7 +42,6 @@ export class WorkerPersistentStorageRepository {
         phoneNumber: worker.phoneNumber,
         isActive: worker.isActive,
         status: status?.status ?? ('OFFLINE' satisfies WorkerLiveStatus),
-        currentBookingId: status?.currentBookingId,
         freeAt: status?.freeAt,
         area: status?.area,
         rating: status?.rating,

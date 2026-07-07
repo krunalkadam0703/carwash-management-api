@@ -9,6 +9,7 @@ export type VehicleRecord = {
   model?: string | null;
   color?: string | null;
   location?: string | null;
+  availableTimeSlot?: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -23,6 +24,7 @@ export type CreateVehicleInput = {
   model?: string;
   color?: string;
   location?: string;
+  availableTimeSlot?: string;
 };
 
 export type UpdateVehicleInput = {
@@ -36,4 +38,5 @@ export type UpdateVehicleInput = {
   model?: string | null;
   color?: string | null;
   location?: string | null;
+  availableTimeSlot?: string | null;
 };

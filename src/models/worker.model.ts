@@ -9,7 +9,6 @@ export type WorkerStatusRecord = {
   phoneNumber?: string | null;
   isActive?: boolean;
   status: WorkerLiveStatus;
-  currentBookingId?: string | null;
   freeAt?: Date | null;
   area?: string | null;
   rating?: { toString(): string } | string | null;

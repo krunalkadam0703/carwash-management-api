@@ -7,8 +7,7 @@ type ComplaintDelegate = {
   create(args: unknown): Promise<ComplaintRecord>;
   update(args: unknown): Promise<ComplaintRecord>;
 };
-type BookingDelegate = { findFirst(args: unknown): Promise<{ id: string; customerId: string } | null> };
-type AppDb = { complaint: ComplaintDelegate; booking: BookingDelegate };
+type AppDb = { complaint: ComplaintDelegate };
 
 const db = prisma as unknown as AppDb;
 
@@ -22,10 +21,6 @@ export class ComplaintPersistentStorageRepository {
 
   findById(businessId: string, id: string): Promise<ComplaintRecord | null> {
     return db.complaint.findFirst({ where: { id, businessId } });
-  }
-
-  findBooking(businessId: string, bookingId: string): Promise<{ id: string; customerId: string } | null> {
-    return db.booking.findFirst({ where: { id: bookingId, businessId }, select: { id: true, customerId: true } });
   }
 
   create(input: CreateComplaintInput): Promise<ComplaintRecord> {

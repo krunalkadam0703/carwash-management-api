@@ -4,7 +4,6 @@ export type ComplaintRecord = {
   id: string;
   businessId: string;
   customerId: string;
-  bookingId?: string | null;
   subject: string;
   message: string;
   status: ComplaintStatus;
@@ -16,7 +15,6 @@ export type ComplaintRecord = {
 export type CreateComplaintInput = {
   businessId: string;
   customerId: string;
-  bookingId?: string;
   subject: string;
   message: string;
 };

@@ -10,10 +10,6 @@ export class ComplaintRepository {
     return complaintPersistentStorageRepository.findById(businessId, id);
   }
 
-  findBooking(businessId: string, bookingId: string): Promise<{ id: string; customerId: string } | null> {
-    return complaintPersistentStorageRepository.findBooking(businessId, bookingId);
-  }
-
   create(input: CreateComplaintInput): Promise<ComplaintRecord> {
     return complaintPersistentStorageRepository.create(input);
   }
