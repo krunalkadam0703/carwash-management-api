@@ -1,8 +1,16 @@
-import type { CreateServiceImageInput, CreateVehicleImageInput, ServiceImageRecord, VehicleImageRecord } from '../../models/image.model.js';
+import type {
+  CreateServiceImageInput,
+  CreateVehicleImageInput,
+  ServiceImageRecord,
+  VehicleImageRecord,
+} from '../../models/image.model.js';
 import { imagePersistentStorageRepository } from './persistent-storage.js';
 
 export class ImageRepository {
-  findVehicle(businessId: string, vehicleId: string): Promise<{ id: string; customerId: string } | null> {
+  findVehicle(
+    businessId: string,
+    vehicleId: string,
+  ): Promise<{ id: string; customerId: string } | null> {
     return imagePersistentStorageRepository.findVehicle(businessId, vehicleId);
   }
 

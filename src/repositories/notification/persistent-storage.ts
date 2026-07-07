@@ -1,5 +1,9 @@
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
-import type { CreateNotificationInput, NotificationRecord, NotificationStatus } from '../../models/notification.model.js';
+import type {
+  CreateNotificationInput,
+  NotificationRecord,
+  NotificationStatus,
+} from '../../models/notification.model.js';
 
 type NotificationDelegate = {
   findMany(args: unknown): Promise<NotificationRecord[]>;
@@ -15,7 +19,10 @@ const db = prisma as unknown as AppDb;
 
 export class NotificationPersistentStorageRepository {
   findManyByUserId(userId: string): Promise<NotificationRecord[]> {
-    return db.notification.findMany({ where: { userId, status: { not: 'ARCHIVED' } }, orderBy: { createdAt: 'desc' } });
+    return db.notification.findMany({
+      where: { userId, status: { not: 'ARCHIVED' } },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   findById(userId: string, id: string): Promise<NotificationRecord | null> {
@@ -30,7 +37,11 @@ export class NotificationPersistentStorageRepository {
     return db.notification.create({ data: input });
   }
 
-  updateStatus(_userId: string, id: string, status: NotificationStatus): Promise<NotificationRecord> {
+  updateStatus(
+    _userId: string,
+    id: string,
+    status: NotificationStatus,
+  ): Promise<NotificationRecord> {
     return db.notification.update({
       where: { id },
       data: { status, readAt: status === 'READ' ? new Date() : undefined },
@@ -38,8 +49,12 @@ export class NotificationPersistentStorageRepository {
   }
 
   markAllRead(userId: string): Promise<unknown> {
-    return db.notification.updateMany({ where: { userId, status: 'UNREAD' }, data: { status: 'READ', readAt: new Date() } });
+    return db.notification.updateMany({
+      where: { userId, status: 'UNREAD' },
+      data: { status: 'READ', readAt: new Date() },
+    });
   }
 }
 
-export const notificationPersistentStorageRepository = new NotificationPersistentStorageRepository();
+export const notificationPersistentStorageRepository =
+  new NotificationPersistentStorageRepository();

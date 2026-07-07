@@ -2,7 +2,11 @@ import type { DailyWashRecord, UpdateDailyWashInput } from '../../models/daily-w
 import { dailyWashPersistentStorageRepository } from './persistent-storage.js';
 
 export class DailyWashRepository {
-  findManyByBusinessId(businessId: string, date?: Date, customerId?: string): Promise<DailyWashRecord[]> {
+  findManyByBusinessId(
+    businessId: string,
+    date?: Date,
+    customerId?: string,
+  ): Promise<DailyWashRecord[]> {
     return dailyWashPersistentStorageRepository.findManyByBusinessId(businessId, date, customerId);
   }
 

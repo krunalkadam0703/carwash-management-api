@@ -1,4 +1,8 @@
-import type { CreateWebhookEventInput, UpdateWebhookEventInput, WebhookEventRecord } from '../../models/webhook-event.model.js';
+import type {
+  CreateWebhookEventInput,
+  UpdateWebhookEventInput,
+  WebhookEventRecord,
+} from '../../models/webhook-event.model.js';
 import { webhookEventPersistentStorageRepository } from './persistent-storage.js';
 
 export class WebhookEventRepository {

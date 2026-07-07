@@ -7,7 +7,8 @@ import { AppError } from '../utils/app-error.js';
 export class AuditLogService {
   list(user: AppUser): Promise<AuditLogRecord[]> {
     if (user.role === 'SYSTEM_ADMIN') return auditLogRepository.findManyByBusinessId();
-    if (user.role !== 'OWNER') throw new AppError('Only owners can view audit logs.', HttpStatus.FORBIDDEN);
+    if (user.role !== 'OWNER')
+      throw new AppError('Only owners can view audit logs.', HttpStatus.FORBIDDEN);
     return auditLogRepository.findManyByBusinessId(this.requireBusinessId(user));
   }
 
@@ -16,7 +17,8 @@ export class AuditLogService {
   }
 
   private requireBusinessId(user: AppUser): string {
-    if (!user.businessId) throw new AppError('Business account is required.', HttpStatus.BAD_REQUEST);
+    if (!user.businessId)
+      throw new AppError('Business account is required.', HttpStatus.BAD_REQUEST);
     return user.businessId;
   }
 }

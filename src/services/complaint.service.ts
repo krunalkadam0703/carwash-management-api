@@ -10,7 +10,10 @@ const STATUSES: ComplaintStatus[] = ['OPEN', 'IN_REVIEW', 'RESOLVED', 'CLOSED'];
 export class ComplaintService {
   async list(user: AppUser): Promise<ComplaintRecord[]> {
     const businessId = this.requireBusinessId(user);
-    return complaintRepository.findManyByBusinessId(businessId, user.role === 'CUSTOMER' ? user.id : undefined);
+    return complaintRepository.findManyByBusinessId(
+      businessId,
+      user.role === 'CUSTOMER' ? user.id : undefined,
+    );
   }
 
   async create(user: AppUser, input: { subject: string; message: string }): Promise<ComplaintRecord> {
@@ -38,7 +41,8 @@ export class ComplaintService {
   }
 
   text(value: unknown, field: string): string {
-    if (typeof value !== 'string' || !value.trim()) throw new AppError(field + ' is required.', HttpStatus.BAD_REQUEST);
+    if (typeof value !== 'string' || !value.trim())
+      throw new AppError(field + ' is required.', HttpStatus.BAD_REQUEST);
     return value.trim();
   }
 
@@ -47,16 +51,19 @@ export class ComplaintService {
   }
 
   status(value: unknown): ComplaintStatus {
-    if (typeof value !== 'string' || !STATUSES.includes(value as ComplaintStatus)) throw new AppError('status is invalid.', HttpStatus.BAD_REQUEST);
+    if (typeof value !== 'string' || !STATUSES.includes(value as ComplaintStatus))
+      throw new AppError('status is invalid.', HttpStatus.BAD_REQUEST);
     return value as ComplaintStatus;
   }
 
   private requireOwner(user: AppUser): void {
-    if (user.role !== 'OWNER') throw new AppError('Only owners can update complaints.', HttpStatus.FORBIDDEN);
+    if (user.role !== 'OWNER')
+      throw new AppError('Only owners can update complaints.', HttpStatus.FORBIDDEN);
   }
 
   private requireBusinessId(user: AppUser): string {
-    if (!user.businessId) throw new AppError('Business account is required.', HttpStatus.BAD_REQUEST);
+    if (!user.businessId)
+      throw new AppError('Business account is required.', HttpStatus.BAD_REQUEST);
     return user.businessId;
   }
 }

@@ -1,5 +1,9 @@
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
-import type { CreateWebhookEventInput, UpdateWebhookEventInput, WebhookEventRecord } from '../../models/webhook-event.model.js';
+import type {
+  CreateWebhookEventInput,
+  UpdateWebhookEventInput,
+  WebhookEventRecord,
+} from '../../models/webhook-event.model.js';
 
 type WebhookDelegate = {
   findMany(args: unknown): Promise<WebhookEventRecord[]>;
@@ -31,9 +35,14 @@ export class WebhookEventPersistentStorageRepository {
   update(input: UpdateWebhookEventInput): Promise<WebhookEventRecord> {
     return db.razorpayWebhookEvent.update({
       where: { id: input.id },
-      data: { processed: input.processed, errorMessage: input.errorMessage, processedAt: new Date() },
+      data: {
+        processed: input.processed,
+        errorMessage: input.errorMessage,
+        processedAt: new Date(),
+      },
     });
   }
 }
 
-export const webhookEventPersistentStorageRepository = new WebhookEventPersistentStorageRepository();
+export const webhookEventPersistentStorageRepository =
+  new WebhookEventPersistentStorageRepository();

@@ -1,4 +1,11 @@
-export type SubscriptionStatus = 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'PAYMENT_PENDING' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
+export type SubscriptionStatus =
+  | 'REQUESTED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'PAYMENT_PENDING'
+  | 'ACTIVE'
+  | 'EXPIRED'
+  | 'CANCELLED';
 
 export type SubscriptionRecord = {
   id: string;

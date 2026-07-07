@@ -26,14 +26,18 @@ export class VehicleTypeController {
   };
 
   update = async (req: Request, res: Response): Promise<void> => {
-    const vehicleType = await vehicleTypeService.update(this.getSessionUser(req), vehicleTypeService.parseRequiredText(req.params.id, 'id'), {
-      name: vehicleTypeService.parseOptionalText(req.body.name),
-      slug: vehicleTypeService.parseOptionalText(req.body.slug),
-      examples: vehicleTypeService.parseOptionalText(req.body.examples),
-      icon: vehicleTypeService.parseOptionalText(req.body.icon),
-      sortOrder: vehicleTypeService.parseOptionalNumber(req.body.sortOrder),
-      isActive: vehicleTypeService.parseOptionalBoolean(req.body.isActive),
-    });
+    const vehicleType = await vehicleTypeService.update(
+      this.getSessionUser(req),
+      vehicleTypeService.parseRequiredText(req.params.id, 'id'),
+      {
+        name: vehicleTypeService.parseOptionalText(req.body.name),
+        slug: vehicleTypeService.parseOptionalText(req.body.slug),
+        examples: vehicleTypeService.parseOptionalText(req.body.examples),
+        icon: vehicleTypeService.parseOptionalText(req.body.icon),
+        sortOrder: vehicleTypeService.parseOptionalNumber(req.body.sortOrder),
+        isActive: vehicleTypeService.parseOptionalBoolean(req.body.isActive),
+      },
+    );
 
     ApiResponse.success(res, { vehicleType }, 'Vehicle type updated.');
   };

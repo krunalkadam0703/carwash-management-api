@@ -1,5 +1,9 @@
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
-import type { CreateSubscriptionInput, SubscriptionRecord, UpdateSubscriptionStatusInput } from '../../models/subscription.model.js';
+import type {
+  CreateSubscriptionInput,
+  SubscriptionRecord,
+  UpdateSubscriptionStatusInput,
+} from '../../models/subscription.model.js';
 
 type PrismaSubscription = Omit<SubscriptionRecord, 'amount'> & { amount: { toString(): string } };
 type SubscriptionDelegate = {
@@ -8,16 +12,31 @@ type SubscriptionDelegate = {
   create(args: unknown): Promise<PrismaSubscription>;
   update(args: unknown): Promise<PrismaSubscription>;
 };
-type VehicleDelegate = { findFirst(args: unknown): Promise<{ id: string; customerId: string } | null> };
-type PlanDelegate = { findFirst(args: unknown): Promise<{ id: string; price: { toString(): string } } | null> };
+type VehicleDelegate = {
+  findFirst(args: unknown): Promise<{ id: string; customerId: string } | null>;
+};
+type PlanDelegate = {
+  findFirst(args: unknown): Promise<{ id: string; price: { toString(): string } } | null>;
+};
 type ApprovalLogDelegate = { create(args: unknown): Promise<unknown> };
-type AppDb = { vehicleSubscription: SubscriptionDelegate; vehicle: VehicleDelegate; plan: PlanDelegate; subscriptionApprovalLog: ApprovalLogDelegate };
+type AppDb = {
+  vehicleSubscription: SubscriptionDelegate;
+  vehicle: VehicleDelegate;
+  plan: PlanDelegate;
+  subscriptionApprovalLog: ApprovalLogDelegate;
+};
 
 const db = prisma as unknown as AppDb;
-const mapSubscription = (row: PrismaSubscription): SubscriptionRecord => ({ ...row, amount: row.amount.toString() });
+const mapSubscription = (row: PrismaSubscription): SubscriptionRecord => ({
+  ...row,
+  amount: row.amount.toString(),
+});
 
 export class SubscriptionPersistentStorageRepository {
-  async findManyByBusinessId(businessId: string, customerId?: string): Promise<SubscriptionRecord[]> {
+  async findManyByBusinessId(
+    businessId: string,
+    customerId?: string,
+  ): Promise<SubscriptionRecord[]> {
     const rows = await db.vehicleSubscription.findMany({
       where: { businessId, ...(customerId ? { customerId } : {}) },
       orderBy: { createdAt: 'desc' },
@@ -30,19 +49,35 @@ export class SubscriptionPersistentStorageRepository {
     return row ? mapSubscription(row) : null;
   }
 
-  findVehicle(businessId: string, vehicleId: string): Promise<{ id: string; customerId: string } | null> {
-    return db.vehicle.findFirst({ where: { id: vehicleId, businessId }, select: { id: true, customerId: true } });
+  findVehicle(
+    businessId: string,
+    vehicleId: string,
+  ): Promise<{ id: string; customerId: string } | null> {
+    return db.vehicle.findFirst({
+      where: { id: vehicleId, businessId },
+      select: { id: true, customerId: true },
+    });
   }
 
-  findPlan(businessId: string, planId: string): Promise<{ id: string; price: { toString(): string } } | null> {
-    return db.plan.findFirst({ where: { id: planId, businessId, isActive: true }, select: { id: true, price: true } });
+  findPlan(
+    businessId: string,
+    planId: string,
+  ): Promise<{ id: string; price: { toString(): string } } | null> {
+    return db.plan.findFirst({
+      where: { id: planId, businessId, isActive: true },
+      select: { id: true, price: true },
+    });
   }
 
   async create(input: CreateSubscriptionInput): Promise<SubscriptionRecord> {
     return mapSubscription(await db.vehicleSubscription.create({ data: input }));
   }
 
-  async updateStatus(input: UpdateSubscriptionStatusInput, performedById: string, remarks?: string): Promise<SubscriptionRecord> {
+  async updateStatus(
+    input: UpdateSubscriptionStatusInput,
+    performedById: string,
+    remarks?: string,
+  ): Promise<SubscriptionRecord> {
     const row = await db.vehicleSubscription.update({
       where: { id: input.id },
       data: {
@@ -53,9 +88,12 @@ export class SubscriptionPersistentStorageRepository {
         rejectionReason: input.rejectionReason,
       },
     });
-    await db.subscriptionApprovalLog.create({ data: { subscriptionId: input.id, performedById, action: input.status, remarks } });
+    await db.subscriptionApprovalLog.create({
+      data: { subscriptionId: input.id, performedById, action: input.status, remarks },
+    });
     return mapSubscription(row);
   }
 }
 
-export const subscriptionPersistentStorageRepository = new SubscriptionPersistentStorageRepository();
+export const subscriptionPersistentStorageRepository =
+  new SubscriptionPersistentStorageRepository();

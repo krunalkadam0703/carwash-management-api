@@ -1,5 +1,9 @@
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
-import type { ComplaintRecord, CreateComplaintInput, UpdateComplaintInput } from '../../models/complaint.model.js';
+import type {
+  ComplaintRecord,
+  CreateComplaintInput,
+  UpdateComplaintInput,
+} from '../../models/complaint.model.js';
 
 type ComplaintDelegate = {
   findMany(args: unknown): Promise<ComplaintRecord[]>;
@@ -23,6 +27,19 @@ export class ComplaintPersistentStorageRepository {
     return db.complaint.findFirst({ where: { id, businessId } });
   }
 
+<<<<<<< HEAD
+=======
+  findBooking(
+    businessId: string,
+    bookingId: string,
+  ): Promise<{ id: string; customerId: string } | null> {
+    return db.booking.findFirst({
+      where: { id: bookingId, businessId },
+      select: { id: true, customerId: true },
+    });
+  }
+
+>>>>>>> 2dd5b21277ed50e9e0f6beb135dbf619ec869da4
   create(input: CreateComplaintInput): Promise<ComplaintRecord> {
     return db.complaint.create({ data: input });
   }
@@ -30,7 +47,10 @@ export class ComplaintPersistentStorageRepository {
   updateStatus(input: UpdateComplaintInput): Promise<ComplaintRecord> {
     return db.complaint.update({
       where: { id: input.id },
-      data: { status: input.status, resolvedAt: input.status === 'RESOLVED' ? new Date() : undefined },
+      data: {
+        status: input.status,
+        resolvedAt: input.status === 'RESOLVED' ? new Date() : undefined,
+      },
     });
   }
 }

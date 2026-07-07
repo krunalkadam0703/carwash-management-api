@@ -13,7 +13,10 @@ export class VehicleController {
   };
 
   getById = async (req: Request, res: Response): Promise<void> => {
-    const vehicle = await vehicleService.getById(this.user(req), vehicleService.text(req.params.id, 'id'));
+    const vehicle = await vehicleService.getById(
+      this.user(req),
+      vehicleService.text(req.params.id, 'id'),
+    );
     ApiResponse.success(res, { vehicle }, 'Vehicle loaded.');
   };
 
@@ -34,6 +37,7 @@ export class VehicleController {
   };
 
   update = async (req: Request, res: Response): Promise<void> => {
+<<<<<<< HEAD
     const vehicle = await vehicleService.update(this.user(req), vehicleService.text(req.params.id, 'id'), {
       customerId: vehicleService.optText(req.body.customerId),
       vehicleTypeId: vehicleService.optText(req.body.vehicleTypeId),
@@ -45,6 +49,22 @@ export class VehicleController {
       location: vehicleService.nullableText(req.body.location),
       availableTimeSlot: vehicleService.nullableText(req.body.availableTimeSlot),
     });
+=======
+    const vehicle = await vehicleService.update(
+      this.user(req),
+      vehicleService.text(req.params.id, 'id'),
+      {
+        customerId: vehicleService.optText(req.body.customerId),
+        vehicleTypeId: vehicleService.optText(req.body.vehicleTypeId),
+        vehicleNumber: vehicleService.optText(req.body.vehicleNumber),
+        vehicleName: vehicleService.nullableText(req.body.vehicleName),
+        brand: vehicleService.nullableText(req.body.brand),
+        model: vehicleService.nullableText(req.body.model),
+        color: vehicleService.nullableText(req.body.color),
+        location: vehicleService.nullableText(req.body.location),
+      },
+    );
+>>>>>>> 2dd5b21277ed50e9e0f6beb135dbf619ec869da4
 
     ApiResponse.success(res, { vehicle }, 'Vehicle updated.');
   };

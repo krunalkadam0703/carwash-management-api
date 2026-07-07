@@ -1,4 +1,8 @@
-import type { CreateNotificationInput, NotificationRecord, NotificationStatus } from '../../models/notification.model.js';
+import type {
+  CreateNotificationInput,
+  NotificationRecord,
+  NotificationStatus,
+} from '../../models/notification.model.js';
 import { notificationCacheRepository } from './cache.js';
 import { notificationPersistentStorageRepository } from './persistent-storage.js';
 
@@ -26,8 +30,16 @@ export class NotificationRepository {
     return notification;
   }
 
-  async updateStatus(userId: string, id: string, status: NotificationStatus): Promise<NotificationRecord> {
-    const notification = await notificationPersistentStorageRepository.updateStatus(userId, id, status);
+  async updateStatus(
+    userId: string,
+    id: string,
+    status: NotificationStatus,
+  ): Promise<NotificationRecord> {
+    const notification = await notificationPersistentStorageRepository.updateStatus(
+      userId,
+      id,
+      status,
+    );
     await notificationCacheRepository.invalidateUnreadCount(userId);
     return notification;
   }

@@ -5,11 +5,7 @@ export class RedisService {
     return RedisClient.getClient().get(key);
   }
 
-  public async set(
-    key: string,
-    value: string,
-    ttlSeconds?: number,
-  ): Promise<void> {
+  public async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
     const client = RedisClient.getClient();
 
     if (ttlSeconds) {

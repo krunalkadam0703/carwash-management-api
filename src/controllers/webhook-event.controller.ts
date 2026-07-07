@@ -19,13 +19,19 @@ export class WebhookEventController {
       eventType: webhookEventService.text(req.body.eventType ?? req.body.event, 'eventType'),
       payload: req.body,
       rawBody: request.rawBody,
-      signature: typeof req.headers['x-razorpay-signature'] === 'string' ? req.headers['x-razorpay-signature'] : undefined,
+      signature:
+        typeof req.headers['x-razorpay-signature'] === 'string'
+          ? req.headers['x-razorpay-signature']
+          : undefined,
     });
     ApiResponse.success(res, { event }, 'Webhook event recorded.', HttpStatus.CREATED);
   };
 
   markProcessed = async (req: Request, res: Response): Promise<void> => {
-    const event = await webhookEventService.markProcessed(this.user(req), webhookEventService.text(req.params.id, 'id'));
+    const event = await webhookEventService.markProcessed(
+      this.user(req),
+      webhookEventService.text(req.params.id, 'id'),
+    );
     ApiResponse.success(res, { event }, 'Webhook event marked processed.');
   };
 

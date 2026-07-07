@@ -1,13 +1,23 @@
-import type { CreateSubscriptionInput, SubscriptionRecord, UpdateSubscriptionStatusInput } from '../../models/subscription.model.js';
+import type {
+  CreateSubscriptionInput,
+  SubscriptionRecord,
+  UpdateSubscriptionStatusInput,
+} from '../../models/subscription.model.js';
 import { subscriptionCacheRepository } from './cache.js';
 import { subscriptionPersistentStorageRepository } from './persistent-storage.js';
 
 export class SubscriptionRepository {
-  async findManyByBusinessId(businessId: string, customerId?: string): Promise<SubscriptionRecord[]> {
+  async findManyByBusinessId(
+    businessId: string,
+    customerId?: string,
+  ): Promise<SubscriptionRecord[]> {
     const cached = await subscriptionCacheRepository.findMany(businessId, customerId);
     if (cached) return cached;
 
-    const rows = await subscriptionPersistentStorageRepository.findManyByBusinessId(businessId, customerId);
+    const rows = await subscriptionPersistentStorageRepository.findManyByBusinessId(
+      businessId,
+      customerId,
+    );
     await subscriptionCacheRepository.saveMany(businessId, rows, customerId);
     return rows;
   }
@@ -16,11 +26,17 @@ export class SubscriptionRepository {
     return subscriptionPersistentStorageRepository.findById(businessId, id);
   }
 
-  findVehicle(businessId: string, vehicleId: string): Promise<{ id: string; customerId: string } | null> {
+  findVehicle(
+    businessId: string,
+    vehicleId: string,
+  ): Promise<{ id: string; customerId: string } | null> {
     return subscriptionPersistentStorageRepository.findVehicle(businessId, vehicleId);
   }
 
-  findPlan(businessId: string, planId: string): Promise<{ id: string; price: { toString(): string } } | null> {
+  findPlan(
+    businessId: string,
+    planId: string,
+  ): Promise<{ id: string; price: { toString(): string } } | null> {
     return subscriptionPersistentStorageRepository.findPlan(businessId, planId);
   }
 
@@ -30,8 +46,16 @@ export class SubscriptionRepository {
     return row;
   }
 
-  async updateStatus(input: UpdateSubscriptionStatusInput, performedById: string, remarks?: string): Promise<SubscriptionRecord> {
-    const row = await subscriptionPersistentStorageRepository.updateStatus(input, performedById, remarks);
+  async updateStatus(
+    input: UpdateSubscriptionStatusInput,
+    performedById: string,
+    remarks?: string,
+  ): Promise<SubscriptionRecord> {
+    const row = await subscriptionPersistentStorageRepository.updateStatus(
+      input,
+      performedById,
+      remarks,
+    );
     await subscriptionCacheRepository.invalidateBusiness(row.businessId, row.customerId);
     return row;
   }

@@ -36,7 +36,10 @@ export class ServiceRepository {
   }
 
   existsVehicleTypeForBusiness(businessId: string, vehicleTypeId: string): Promise<boolean> {
-    return servicePersistentStorageRepository.existsVehicleTypeForBusiness(businessId, vehicleTypeId);
+    return servicePersistentStorageRepository.existsVehicleTypeForBusiness(
+      businessId,
+      vehicleTypeId,
+    );
   }
 
   async create(input: CreateServiceInput): Promise<ServiceRecord> {

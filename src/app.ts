@@ -10,9 +10,10 @@ const app: Application = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
 
-const configuredOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean) ?? [];
+const configuredOrigins =
+  process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean) ?? [];
 
 const allowedOrigins = new Set([
   ...configuredOrigins,
@@ -47,12 +48,14 @@ app.use((req, res, next) => {
 app.all('/api/auth/{*authPath}', toNodeHandler(auth));
 
 // High-Performance Body Parsers
-app.use(express.json({
-  limit: '10mb',
-  verify: (req, _res, buf) => {
-    (req as Request & { rawBody?: Buffer }).rawBody = Buffer.from(buf);
-  },
-}));
+app.use(
+  express.json({
+    limit: '10mb',
+    verify: (req, _res, buf) => {
+      (req as Request & { rawBody?: Buffer }).rawBody = Buffer.from(buf);
+    },
+  }),
+);
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const cookieSecret = process.env.COOKIE_SECRET || 'local-dev-fallback-secret-12345';
 app.use(cookieParser(cookieSecret));
@@ -81,5 +84,3 @@ app.use((_req: Request, res: Response) => {
 app.use(errorMiddleware);
 
 export default app;
-
-

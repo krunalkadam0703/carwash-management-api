@@ -32,7 +32,8 @@ export class NotificationService {
   }
 
   text(value: unknown, field: string): string {
-    if (typeof value !== 'string' || !value.trim()) throw new AppError(field + ' is required.', HttpStatus.BAD_REQUEST);
+    if (typeof value !== 'string' || !value.trim())
+      throw new AppError(field + ' is required.', HttpStatus.BAD_REQUEST);
     return value.trim();
   }
 

@@ -45,7 +45,12 @@ export class AuthController {
       address: this.authService.optionalText(req.body.address),
     });
 
-    ApiResponse.success(res, { worker }, 'Worker account invited and deactivated.', HttpStatus.CREATED);
+    ApiResponse.success(
+      res,
+      { worker },
+      'Worker account invited and deactivated.',
+      HttpStatus.CREATED,
+    );
   };
 
   private getSessionUser(req: Request): AuthenticatedUser {

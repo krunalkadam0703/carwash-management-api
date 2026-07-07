@@ -33,11 +33,17 @@ type AppDb = {
 };
 
 const db = prisma as unknown as AppDb;
-const mapPayment = (row: PrismaPayment): PaymentRecord => ({ ...row, amount: row.amount.toString() });
+const mapPayment = (row: PrismaPayment): PaymentRecord => ({
+  ...row,
+  amount: row.amount.toString(),
+});
 
 export class PaymentPersistentStorageRepository {
   async findManyByBusinessId(businessId: string, customerId?: string): Promise<PaymentRecord[]> {
-    const rows = await db.payment.findMany({ where: { businessId, ...(customerId ? { customerId } : {}) }, orderBy: { createdAt: 'desc' } });
+    const rows = await db.payment.findMany({
+      where: { businessId, ...(customerId ? { customerId } : {}) },
+      orderBy: { createdAt: 'desc' },
+    });
     return rows.map(mapPayment);
   }
 
@@ -46,14 +52,25 @@ export class PaymentPersistentStorageRepository {
     return row ? mapPayment(row) : null;
   }
 
-  findSubscription(businessId: string, subscriptionId: string): Promise<SubscriptionForPayment | null> {
-    return db.vehicleSubscription.findFirst({ where: { id: subscriptionId, businessId }, include: { plan: { select: { durationDays: true } } } });
+  findSubscription(
+    businessId: string,
+    subscriptionId: string,
+  ): Promise<SubscriptionForPayment | null> {
+    return db.vehicleSubscription.findFirst({
+      where: { id: subscriptionId, businessId },
+      include: { plan: { select: { durationDays: true } } },
+    });
   }
 
   async createSubscriptionPayment(input: CreateSubscriptionPaymentInput): Promise<PaymentRecord> {
     return db.$transaction(async (tx) => {
-      const row = await tx.payment.create({ data: { ...input, status: 'PENDING', currency: 'INR' } });
-      await tx.vehicleSubscription.update({ where: { id: input.subscriptionId }, data: { status: 'PAYMENT_PENDING' } });
+      const row = await tx.payment.create({
+        data: { ...input, status: 'PENDING', currency: 'INR' },
+      });
+      await tx.vehicleSubscription.update({
+        where: { id: input.subscriptionId },
+        data: { status: 'PAYMENT_PENDING' },
+      });
       return mapPayment(row);
     });
   }
@@ -81,13 +98,20 @@ export class PaymentPersistentStorageRepository {
       });
       const endDate = new Date();
       endDate.setDate(endDate.getDate() + durationDays);
-      if (payment.subscriptionId) await tx.vehicleSubscription.update({ where: { id: payment.subscriptionId }, data: { status: 'ACTIVE', startDate: new Date(), endDate } });
+      if (payment.subscriptionId)
+        await tx.vehicleSubscription.update({
+          where: { id: payment.subscriptionId },
+          data: { status: 'ACTIVE', startDate: new Date(), endDate },
+        });
       return mapPayment(payment);
     });
   }
 
   async fail(input: FailPaymentInput): Promise<PaymentRecord> {
-    const row = await db.payment.update({ where: { id: input.id }, data: { status: 'FAILED', failureReason: input.failureReason } });
+    const row = await db.payment.update({
+      where: { id: input.id },
+      data: { status: 'FAILED', failureReason: input.failureReason },
+    });
     return mapPayment(row);
   }
 }

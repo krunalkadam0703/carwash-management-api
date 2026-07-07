@@ -2,8 +2,7 @@ import { redisService } from '../../infrastructure/redis/index.js';
 import type { ServiceRecord } from '../../models/service.model.js';
 
 const SERVICE_CACHE_TTL_SECONDS = 300;
-const serviceCacheKey = (businessId: string, id: string): string =>
-  `service:${businessId}:${id}`;
+const serviceCacheKey = (businessId: string, id: string): string => `service:${businessId}:${id}`;
 const serviceListCacheKey = (businessId: string): string => `service:${businessId}:list`;
 
 export class ServiceCacheRepository {

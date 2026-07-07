@@ -56,7 +56,12 @@ export class UserRepository {
     return user;
   }
 
-  async updateProfile(input: { userId: string; name?: string; phoneNumber?: string | null; address?: string | null }): Promise<AppUser> {
+  async updateProfile(input: {
+    userId: string;
+    name?: string;
+    phoneNumber?: string | null;
+    address?: string | null;
+  }): Promise<AppUser> {
     const user = await userPersistentStorageRepository.updateProfile(input);
     await userCacheRepository.save(user);
     return user;

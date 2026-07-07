@@ -1,4 +1,11 @@
-export type DailyWashStatus = 'SCHEDULED' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'SKIPPED' | 'UNAVAILABLE' | 'CANCELLED';
+export type DailyWashStatus =
+  | 'SCHEDULED'
+  | 'ASSIGNED'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'SKIPPED'
+  | 'UNAVAILABLE'
+  | 'CANCELLED';
 
 export type DailyWashRecord = {
   id: string;

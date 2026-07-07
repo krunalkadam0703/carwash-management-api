@@ -1,5 +1,9 @@
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
-import type { ActiveSubscriptionForWash, DailyWashRecord, UpdateDailyWashInput } from '../../models/daily-wash.model.js';
+import type {
+  ActiveSubscriptionForWash,
+  DailyWashRecord,
+  UpdateDailyWashInput,
+} from '../../models/daily-wash.model.js';
 
 type DailyWashDelegate = {
   findMany(args: unknown): Promise<DailyWashRecord[]>;
@@ -13,9 +17,17 @@ type AppDb = { dailyWashSchedule: DailyWashDelegate; vehicleSubscription: Subscr
 const db = prisma as unknown as AppDb;
 
 export class DailyWashPersistentStorageRepository {
-  findManyByBusinessId(businessId: string, date?: Date, customerId?: string): Promise<DailyWashRecord[]> {
+  findManyByBusinessId(
+    businessId: string,
+    date?: Date,
+    customerId?: string,
+  ): Promise<DailyWashRecord[]> {
     return db.dailyWashSchedule.findMany({
-      where: { businessId, ...(date ? { washDate: date } : {}), ...(customerId ? { customerId } : {}) },
+      where: {
+        businessId,
+        ...(date ? { washDate: date } : {}),
+        ...(customerId ? { customerId } : {}),
+      },
       orderBy: [{ washDate: 'asc' }, { createdAt: 'asc' }],
     });
   }
@@ -24,7 +36,10 @@ export class DailyWashPersistentStorageRepository {
     return db.dailyWashSchedule.findFirst({ where: { id, businessId } });
   }
 
-  findActiveSubscriptionsForDate(businessId: string, date: Date): Promise<ActiveSubscriptionForWash[]> {
+  findActiveSubscriptionsForDate(
+    businessId: string,
+    date: Date,
+  ): Promise<ActiveSubscriptionForWash[]> {
     return db.vehicleSubscription.findMany({
       where: { businessId, status: 'ACTIVE', startDate: { lte: date }, endDate: { gte: date } },
       select: { id: true, businessId: true, customerId: true, vehicleId: true },

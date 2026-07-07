@@ -52,11 +52,18 @@ export class WorkerPersistentStorageRepository {
   }
 
   async existsWorkerForBusiness(businessId: string, workerId: string): Promise<boolean> {
-    return Boolean(await db.user.findFirst({ where: { id: workerId, businessId, role: 'WORKER' }, select: { id: true } }));
+    return Boolean(
+      await db.user.findFirst({
+        where: { id: workerId, businessId, role: 'WORKER' },
+        select: { id: true },
+      }),
+    );
   }
 
   async existsVehicleForBusiness(businessId: string, vehicleId: string): Promise<boolean> {
-    return Boolean(await db.vehicle.findFirst({ where: { id: vehicleId, businessId }, select: { id: true } }));
+    return Boolean(
+      await db.vehicle.findFirst({ where: { id: vehicleId, businessId }, select: { id: true } }),
+    );
   }
 
   upsertStatus(input: UpdateWorkerStatusInput): Promise<WorkerStatusRecord> {
@@ -67,7 +74,10 @@ export class WorkerPersistentStorageRepository {
     });
   }
 
-  findAssignmentsByBusinessId(businessId: string, workerId?: string): Promise<WorkerAssignmentRecord[]> {
+  findAssignmentsByBusinessId(
+    businessId: string,
+    workerId?: string,
+  ): Promise<WorkerAssignmentRecord[]> {
     return db.workerAssignment.findMany({
       where: { ...(workerId ? { workerId } : {}), vehicle: { businessId } },
       orderBy: { assignedAt: 'desc' },

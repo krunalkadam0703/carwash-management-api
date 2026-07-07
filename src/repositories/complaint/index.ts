@@ -1,4 +1,8 @@
-import type { ComplaintRecord, CreateComplaintInput, UpdateComplaintInput } from '../../models/complaint.model.js';
+import type {
+  ComplaintRecord,
+  CreateComplaintInput,
+  UpdateComplaintInput,
+} from '../../models/complaint.model.js';
 import { complaintPersistentStorageRepository } from './persistent-storage.js';
 
 export class ComplaintRepository {
