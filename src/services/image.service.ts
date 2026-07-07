@@ -1,11 +1,19 @@
 import { HttpStatus } from '../constants/http.js';
 import type { AppUser } from '../models/auth.model.js';
-import type { ServiceImageRecord, VehicleImageRecord } from '../models/image.model.js';
+import type { DailyWashImageRecord, ServiceImageRecord, VehicleImageRecord } from '../models/image.model.js';
 import { imageRepository } from '../repositories/image/index.js';
 import { localFileStorageService } from './local-file-storage.service.js';
 import { AppError } from '../utils/app-error.js';
 
 export class ImageService {
+  async listVehicleImages(user: AppUser, vehicleId: string): Promise<VehicleImageRecord[]> {
+    const businessId = this.requireBusinessId(user);
+    const vehicle = await imageRepository.findVehicle(businessId, vehicleId);
+    if (!vehicle || (user.role === 'CUSTOMER' && vehicle.customerId !== user.id))
+      throw new AppError('Vehicle was not found.', HttpStatus.NOT_FOUND);
+    return imageRepository.findVehicleImages(vehicleId);
+  }
+
   async uploadVehicleImage(
     user: AppUser,
     vehicleId: string,
@@ -23,6 +31,29 @@ export class ImageService {
       file.originalname,
     );
     return imageRepository.createVehicleImage({ vehicleId, imageUrl: stored.publicUrl, caption });
+  }
+
+  async uploadDailyWashImage(
+    user: AppUser,
+    dailyWashId: string,
+    file: Express.Multer.File,
+    photoType: string,
+  ): Promise<DailyWashImageRecord> {
+    if (!['OWNER', 'WORKER'].includes(user.role))
+      throw new AppError('Only workers or owners can upload wash photos.', HttpStatus.FORBIDDEN);
+    const dailyWash = await imageRepository.findDailyWash(this.requireBusinessId(user), dailyWashId);
+    if (!dailyWash) throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
+    const type = this.photoType(photoType);
+    const stored = await localFileStorageService.saveBuffer(
+      'daily-cleanings',
+      file.buffer,
+      file.originalname,
+    );
+    return imageRepository.createDailyWashImage({
+      dailyWashId,
+      imageUrl: stored.publicUrl,
+      photoType: type,
+    });
   }
 
   async uploadServiceImage(
@@ -71,6 +102,13 @@ export class ImageService {
     if (!Number.isInteger(parsed) || parsed < 0)
       throw new AppError('sortOrder must be a positive integer.', HttpStatus.BAD_REQUEST);
     return parsed;
+  }
+
+  photoType(value: unknown): string {
+    const type = this.text(value, 'photoType').toUpperCase();
+    if (!['DONE', 'NOT_DONE'].includes(type))
+      throw new AppError('photoType must be DONE or NOT_DONE.', HttpStatus.BAD_REQUEST);
+    return type;
   }
 
   private requireOwner(user: AppUser): void {

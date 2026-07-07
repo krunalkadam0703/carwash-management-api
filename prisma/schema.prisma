@@ -630,10 +630,23 @@ model DailyWashSchedule {
   subscription VehicleSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   customer     User                @relation("CustomerDailyWashSchedules", fields: [customerId], references: [id])
   vehicle      Vehicle             @relation(fields: [vehicleId], references: [id])
+  photos       DailyWashPhoto[]
 
   @@unique([subscriptionId, washDate])
   @@index([businessId, washDate])
   @@index([status])
+}
+
+model DailyWashPhoto {
+  id          String   @id @default(uuid())
+  dailyWashId String
+  imageUrl    String
+  photoType   String
+  createdAt   DateTime @default(now())
+
+  dailyWash DailyWashSchedule @relation(fields: [dailyWashId], references: [id], onDelete: Cascade)
+
+  @@index([dailyWashId, photoType])
 }
 
 model SubscriptionPause {

@@ -14,6 +14,14 @@ export type VehicleImageRecord = ImageRecord & {
   vehicleId: string;
 };
 
+export type DailyWashImageRecord = {
+  id: string;
+  dailyWashId: string;
+  imageUrl: string;
+  photoType: string;
+  createdAt: Date;
+};
+
 export type CreateVehicleImageInput = {
   vehicleId: string;
   imageUrl: string;
@@ -25,4 +33,10 @@ export type CreateServiceImageInput = {
   imageUrl: string;
   caption?: string;
   sortOrder?: number;
+};
+
+export type CreateDailyWashImageInput = {
+  dailyWashId: string;
+  imageUrl: string;
+  photoType: string;
 };

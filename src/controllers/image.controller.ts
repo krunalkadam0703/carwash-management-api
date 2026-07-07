@@ -7,6 +7,14 @@ import { ApiResponse } from '../utils/api-response.js';
 import { AppError } from '../utils/app-error.js';
 
 export class ImageController {
+  listVehicleImages = async (req: Request, res: Response): Promise<void> => {
+    const images = await imageService.listVehicleImages(
+      this.user(req),
+      imageService.text(req.params.vehicleId, 'vehicleId'),
+    );
+    ApiResponse.success(res, { images }, 'Vehicle images loaded.');
+  };
+
   uploadVehicleImage = async (req: Request, res: Response): Promise<void> => {
     const image = await imageService.uploadVehicleImage(
       this.user(req),
@@ -16,6 +24,17 @@ export class ImageController {
     );
 
     ApiResponse.success(res, { image }, 'Vehicle image uploaded.', HttpStatus.CREATED);
+  };
+
+  uploadDailyWashImage = async (req: Request, res: Response): Promise<void> => {
+    const image = await imageService.uploadDailyWashImage(
+      this.user(req),
+      imageService.text(req.params.dailyWashId, 'dailyWashId'),
+      imageService.file(req.file),
+      imageService.text(req.body.photoType, 'photoType'),
+    );
+
+    ApiResponse.success(res, { image }, 'Daily wash image uploaded.', HttpStatus.CREATED);
   };
 
   uploadServiceImage = async (req: Request, res: Response): Promise<void> => {

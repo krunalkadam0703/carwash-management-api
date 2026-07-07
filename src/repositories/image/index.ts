@@ -1,6 +1,8 @@
 import type {
+  CreateDailyWashImageInput,
   CreateServiceImageInput,
   CreateVehicleImageInput,
+  DailyWashImageRecord,
   ServiceImageRecord,
   VehicleImageRecord,
 } from '../../models/image.model.js';
@@ -18,12 +20,24 @@ export class ImageRepository {
     return imagePersistentStorageRepository.findService(businessId, serviceId);
   }
 
+  findDailyWash(businessId: string, dailyWashId: string) {
+    return imagePersistentStorageRepository.findDailyWash(businessId, dailyWashId);
+  }
+
+  findVehicleImages(vehicleId: string): Promise<VehicleImageRecord[]> {
+    return imagePersistentStorageRepository.findVehicleImages(vehicleId);
+  }
+
   createVehicleImage(input: CreateVehicleImageInput): Promise<VehicleImageRecord> {
     return imagePersistentStorageRepository.createVehicleImage(input);
   }
 
   createServiceImage(input: CreateServiceImageInput): Promise<ServiceImageRecord> {
     return imagePersistentStorageRepository.createServiceImage(input);
+  }
+
+  createDailyWashImage(input: CreateDailyWashImageInput): Promise<DailyWashImageRecord> {
+    return imagePersistentStorageRepository.createDailyWashImage(input);
   }
 }
 

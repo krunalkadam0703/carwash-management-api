@@ -14,7 +14,9 @@ const imageUpload = UploadMiddleware.single('image', {
 
 imageRouter.use(requireSession);
 
+imageRouter.get('/vehicles/:vehicleId', imageController.listVehicleImages);
 imageRouter.post('/vehicles/:vehicleId', imageUpload, imageController.uploadVehicleImage);
+imageRouter.post('/daily-washes/:dailyWashId', imageUpload, imageController.uploadDailyWashImage);
 imageRouter.post('/services/:serviceId', imageUpload, imageController.uploadServiceImage);
 
 export default imageRouter;
