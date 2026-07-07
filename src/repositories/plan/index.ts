@@ -7,7 +7,10 @@ export class PlanRepository {
     const cached = await planCacheRepository.findMany(businessId, activeOnly);
     if (cached) return cached;
 
-    const plans = await planPersistentStorageRepository.findManyByBusinessId(businessId, activeOnly);
+    const plans = await planPersistentStorageRepository.findManyByBusinessId(
+      businessId,
+      activeOnly,
+    );
     await planCacheRepository.saveMany(businessId, plans, activeOnly);
     return plans;
   }

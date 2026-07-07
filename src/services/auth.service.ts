@@ -65,7 +65,9 @@ export interface AuthServiceContract {
     phoneNumber?: string;
     address?: string;
   }): Promise<AppUser>;
-  onboardOwner(input: CreateOwnerBusinessInput): Promise<{ user: AppUser; business: BusinessRecord }>;
+  onboardOwner(
+    input: CreateOwnerBusinessInput,
+  ): Promise<{ user: AppUser; business: BusinessRecord }>;
   onboardCustomer(input: {
     user: AppUser;
     phoneNumber: string;
@@ -98,7 +100,10 @@ export class AuthService implements AuthServiceContract {
 
   requireRole(user: AppUser, roles: AppRole[]): void {
     if (!roles.includes(user.role)) {
-      throw new AppError('You do not have permission to perform this action.', HttpStatus.FORBIDDEN);
+      throw new AppError(
+        'You do not have permission to perform this action.',
+        HttpStatus.FORBIDDEN,
+      );
     }
   }
 
@@ -131,7 +136,10 @@ export class AuthService implements AuthServiceContract {
     const business = await this.dependencies.businessRepository.findByOwnerId(input.owner.id);
 
     if (!business) {
-      throw new AppError('Create your business account before adding workers.', HttpStatus.BAD_REQUEST);
+      throw new AppError(
+        'Create your business account before adding workers.',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     const email = input.email.toLowerCase();
@@ -150,12 +158,16 @@ export class AuthService implements AuthServiceContract {
     });
   }
 
-  async onboardOwner(input: CreateOwnerBusinessInput): Promise<{ user: AppUser; business: BusinessRecord }> {
+  async onboardOwner(
+    input: CreateOwnerBusinessInput,
+  ): Promise<{ user: AppUser; business: BusinessRecord }> {
     if (input.user.role === 'WORKER') {
       throw new AppError('Worker accounts cannot create businesses.', HttpStatus.FORBIDDEN);
     }
 
-    const existingBusiness = await this.dependencies.businessRepository.findByOwnerId(input.user.id);
+    const existingBusiness = await this.dependencies.businessRepository.findByOwnerId(
+      input.user.id,
+    );
 
     if (existingBusiness) {
       throw new AppError('This owner already has a business account.', HttpStatus.CONFLICT);
@@ -171,11 +183,21 @@ export class AuthService implements AuthServiceContract {
     businessId?: string;
   }): Promise<AppUser> {
     if (input.user.role !== 'CUSTOMER') {
-      throw new AppError('Only customer accounts can use customer onboarding.', HttpStatus.FORBIDDEN);
+      throw new AppError(
+        'Only customer accounts can use customer onboarding.',
+        HttpStatus.FORBIDDEN,
+      );
     }
 
-    const businessId = input.businessId ?? input.user.businessId ?? (await this.dependencies.businessRepository.findFirst())?.id;
-    if (!businessId) throw new AppError('No business account is available for customer onboarding.', HttpStatus.BAD_REQUEST);
+    const businessId =
+      input.businessId ??
+      input.user.businessId ??
+      (await this.dependencies.businessRepository.findFirst())?.id;
+    if (!businessId)
+      throw new AppError(
+        'No business account is available for customer onboarding.',
+        HttpStatus.BAD_REQUEST,
+      );
     return this.dependencies.userRepository.updateCustomerProfile({
       userId: input.user.id,
       phoneNumber: input.phoneNumber,

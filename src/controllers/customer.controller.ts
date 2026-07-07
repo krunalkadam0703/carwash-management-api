@@ -13,11 +13,15 @@ export class CustomerController {
   };
 
   update = async (req: Request, res: Response): Promise<void> => {
-    const customer = await customerService.update(this.user(req), customerService.text(req.params.id, 'id'), {
-      name: customerService.optText(req.body.name),
-      phoneNumber: customerService.nullableText(req.body.phoneNumber),
-      address: customerService.nullableText(req.body.address),
-    });
+    const customer = await customerService.update(
+      this.user(req),
+      customerService.text(req.params.id, 'id'),
+      {
+        name: customerService.optText(req.body.name),
+        phoneNumber: customerService.nullableText(req.body.phoneNumber),
+        address: customerService.nullableText(req.body.address),
+      },
+    );
     ApiResponse.success(res, { customer }, 'Customer updated.');
   };
 

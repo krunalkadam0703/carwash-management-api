@@ -13,7 +13,10 @@ export class SubscriptionController {
   };
 
   getById = async (req: Request, res: Response): Promise<void> => {
-    const subscription = await subscriptionService.getById(this.user(req), subscriptionService.text(req.params.id, 'id'));
+    const subscription = await subscriptionService.getById(
+      this.user(req),
+      subscriptionService.text(req.params.id, 'id'),
+    );
     ApiResponse.success(res, { subscription }, 'Subscription loaded.');
   };
 

@@ -13,17 +13,24 @@ export class PaymentController {
   };
 
   createSubscriptionPayment = async (req: Request, res: Response): Promise<void> => {
-    const result = await paymentService.createForSubscription(this.user(req), paymentService.text(req.params.subscriptionId, 'subscriptionId'));
+    const result = await paymentService.createForSubscription(
+      this.user(req),
+      paymentService.text(req.params.subscriptionId, 'subscriptionId'),
+    );
     ApiResponse.success(res, result, 'Subscription payment created.', HttpStatus.CREATED);
   };
 
   complete = async (req: Request, res: Response): Promise<void> => {
-    const payment = await paymentService.complete(this.user(req), paymentService.text(req.params.id, 'id'), {
-      razorpayPaymentId: paymentService.optText(req.body.razorpayPaymentId),
-      razorpaySignature: paymentService.optText(req.body.razorpaySignature),
-      paymentMethod: paymentService.optText(req.body.paymentMethod),
-      upiRef: paymentService.optText(req.body.upiRef),
-    });
+    const payment = await paymentService.complete(
+      this.user(req),
+      paymentService.text(req.params.id, 'id'),
+      {
+        razorpayPaymentId: paymentService.optText(req.body.razorpayPaymentId),
+        razorpaySignature: paymentService.optText(req.body.razorpaySignature),
+        paymentMethod: paymentService.optText(req.body.paymentMethod),
+        upiRef: paymentService.optText(req.body.upiRef),
+      },
+    );
 
     ApiResponse.success(res, { payment }, 'Payment completed.');
   };

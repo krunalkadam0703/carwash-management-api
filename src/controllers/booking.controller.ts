@@ -34,17 +34,27 @@ export class BookingController {
   };
 
   start = async (req: Request, res: Response): Promise<void> => {
-    const booking = await bookingService.start(this.user(req), bookingService.text(req.params.id, 'id'));
+    const booking = await bookingService.start(
+      this.user(req),
+      bookingService.text(req.params.id, 'id'),
+    );
     ApiResponse.success(res, { booking }, 'Booking started.');
   };
 
   complete = async (req: Request, res: Response): Promise<void> => {
-    const booking = await bookingService.complete(this.user(req), bookingService.text(req.params.id, 'id'));
+    const booking = await bookingService.complete(
+      this.user(req),
+      bookingService.text(req.params.id, 'id'),
+    );
     ApiResponse.success(res, { booking }, 'Booking completed.');
   };
 
   cancel = async (req: Request, res: Response): Promise<void> => {
-    const booking = await bookingService.cancel(this.user(req), bookingService.text(req.params.id, 'id'), bookingService.optText(req.body.reason));
+    const booking = await bookingService.cancel(
+      this.user(req),
+      bookingService.text(req.params.id, 'id'),
+      bookingService.optText(req.body.reason),
+    );
     ApiResponse.success(res, { booking }, 'Booking cancelled.');
   };
 

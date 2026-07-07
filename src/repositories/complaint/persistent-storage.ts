@@ -1,5 +1,9 @@
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
-import type { ComplaintRecord, CreateComplaintInput, UpdateComplaintInput } from '../../models/complaint.model.js';
+import type {
+  ComplaintRecord,
+  CreateComplaintInput,
+  UpdateComplaintInput,
+} from '../../models/complaint.model.js';
 
 type ComplaintDelegate = {
   findMany(args: unknown): Promise<ComplaintRecord[]>;
@@ -7,7 +11,9 @@ type ComplaintDelegate = {
   create(args: unknown): Promise<ComplaintRecord>;
   update(args: unknown): Promise<ComplaintRecord>;
 };
-type BookingDelegate = { findFirst(args: unknown): Promise<{ id: string; customerId: string } | null> };
+type BookingDelegate = {
+  findFirst(args: unknown): Promise<{ id: string; customerId: string } | null>;
+};
 type AppDb = { complaint: ComplaintDelegate; booking: BookingDelegate };
 
 const db = prisma as unknown as AppDb;
@@ -24,8 +30,14 @@ export class ComplaintPersistentStorageRepository {
     return db.complaint.findFirst({ where: { id, businessId } });
   }
 
-  findBooking(businessId: string, bookingId: string): Promise<{ id: string; customerId: string } | null> {
-    return db.booking.findFirst({ where: { id: bookingId, businessId }, select: { id: true, customerId: true } });
+  findBooking(
+    businessId: string,
+    bookingId: string,
+  ): Promise<{ id: string; customerId: string } | null> {
+    return db.booking.findFirst({
+      where: { id: bookingId, businessId },
+      select: { id: true, customerId: true },
+    });
   }
 
   create(input: CreateComplaintInput): Promise<ComplaintRecord> {
@@ -35,7 +47,10 @@ export class ComplaintPersistentStorageRepository {
   updateStatus(input: UpdateComplaintInput): Promise<ComplaintRecord> {
     return db.complaint.update({
       where: { id: input.id },
-      data: { status: input.status, resolvedAt: input.status === 'RESOLVED' ? new Date() : undefined },
+      data: {
+        status: input.status,
+        resolvedAt: input.status === 'RESOLVED' ? new Date() : undefined,
+      },
     });
   }
 }

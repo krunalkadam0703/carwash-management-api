@@ -1,7 +1,14 @@
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
-import type { CreateServiceImageInput, CreateVehicleImageInput, ServiceImageRecord, VehicleImageRecord } from '../../models/image.model.js';
+import type {
+  CreateServiceImageInput,
+  CreateVehicleImageInput,
+  ServiceImageRecord,
+  VehicleImageRecord,
+} from '../../models/image.model.js';
 
-type VehicleDelegate = { findFirst(args: unknown): Promise<{ id: string; customerId: string } | null> };
+type VehicleDelegate = {
+  findFirst(args: unknown): Promise<{ id: string; customerId: string } | null>;
+};
 type ServiceDelegate = { findFirst(args: unknown): Promise<{ id: string } | null> };
 type VehiclePhotoDelegate = { create(args: unknown): Promise<VehicleImageRecord> };
 type ServiceImageDelegate = { create(args: unknown): Promise<ServiceImageRecord> };
@@ -15,8 +22,14 @@ type AppDb = {
 const db = prisma as unknown as AppDb;
 
 export class ImagePersistentStorageRepository {
-  findVehicle(businessId: string, vehicleId: string): Promise<{ id: string; customerId: string } | null> {
-    return db.vehicle.findFirst({ where: { id: vehicleId, businessId }, select: { id: true, customerId: true } });
+  findVehicle(
+    businessId: string,
+    vehicleId: string,
+  ): Promise<{ id: string; customerId: string } | null> {
+    return db.vehicle.findFirst({
+      where: { id: vehicleId, businessId },
+      select: { id: true, customerId: true },
+    });
   }
 
   findService(businessId: string, serviceId: string): Promise<{ id: string } | null> {

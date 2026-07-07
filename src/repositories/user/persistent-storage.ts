@@ -75,7 +75,12 @@ export class UserPersistentStorageRepository {
     });
   }
 
-  updateProfile(input: { userId: string; name?: string; phoneNumber?: string | null; address?: string | null }): Promise<AppUser> {
+  updateProfile(input: {
+    userId: string;
+    name?: string;
+    phoneNumber?: string | null;
+    address?: string | null;
+  }): Promise<AppUser> {
     return db.user.update({
       where: { id: input.userId },
       data: {

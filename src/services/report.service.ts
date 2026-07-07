@@ -6,7 +6,8 @@ import { AppError } from '../utils/app-error.js';
 
 export class ReportService {
   ownerSummary(user: AppUser, range: ReportRange): Promise<OwnerReportSummary> {
-    if (user.role !== 'OWNER') throw new AppError('Only owners can view reports.', HttpStatus.FORBIDDEN);
+    if (user.role !== 'OWNER')
+      throw new AppError('Only owners can view reports.', HttpStatus.FORBIDDEN);
     return reportRepository.ownerSummary(this.requireBusinessId(user), range);
   }
 
@@ -22,7 +23,8 @@ export class ReportService {
   private date(value: unknown, fallback: Date): Date {
     if (typeof value !== 'string' || !value.trim()) return fallback;
     const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) throw new AppError('date range is invalid.', HttpStatus.BAD_REQUEST);
+    if (Number.isNaN(parsed.getTime()))
+      throw new AppError('date range is invalid.', HttpStatus.BAD_REQUEST);
     return parsed;
   }
 
@@ -33,7 +35,8 @@ export class ReportService {
   }
 
   private requireBusinessId(user: AppUser): string {
-    if (!user.businessId) throw new AppError('Business account is required.', HttpStatus.BAD_REQUEST);
+    if (!user.businessId)
+      throw new AppError('Business account is required.', HttpStatus.BAD_REQUEST);
     return user.businessId;
   }
 }

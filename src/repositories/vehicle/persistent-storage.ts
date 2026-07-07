@@ -1,5 +1,9 @@
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
-import type { CreateVehicleInput, UpdateVehicleInput, VehicleRecord } from '../../models/vehicle.model.js';
+import type {
+  CreateVehicleInput,
+  UpdateVehicleInput,
+  VehicleRecord,
+} from '../../models/vehicle.model.js';
 
 type VehicleDelegate = {
   findMany(args: unknown): Promise<VehicleRecord[]>;
@@ -26,11 +30,21 @@ export class VehiclePersistentStorageRepository {
   }
 
   async existsCustomerForBusiness(businessId: string, customerId: string): Promise<boolean> {
-    return Boolean(await db.user.findFirst({ where: { id: customerId, businessId, role: 'CUSTOMER' }, select: { id: true } }));
+    return Boolean(
+      await db.user.findFirst({
+        where: { id: customerId, businessId, role: 'CUSTOMER' },
+        select: { id: true },
+      }),
+    );
   }
 
   async existsVehicleTypeForBusiness(businessId: string, vehicleTypeId: string): Promise<boolean> {
-    return Boolean(await db.vehicleType.findFirst({ where: { id: vehicleTypeId, businessId }, select: { id: true } }));
+    return Boolean(
+      await db.vehicleType.findFirst({
+        where: { id: vehicleTypeId, businessId },
+        select: { id: true },
+      }),
+    );
   }
 
   create(input: CreateVehicleInput): Promise<VehicleRecord> {

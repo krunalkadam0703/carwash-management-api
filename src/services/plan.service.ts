@@ -36,7 +36,8 @@ export class PlanService {
   }
 
   text(value: unknown, field: string): string {
-    if (typeof value !== 'string' || !value.trim()) throw new AppError(field + ' is required.', HttpStatus.BAD_REQUEST);
+    if (typeof value !== 'string' || !value.trim())
+      throw new AppError(field + ' is required.', HttpStatus.BAD_REQUEST);
     return value.trim();
   }
 
@@ -50,7 +51,8 @@ export class PlanService {
 
   money(value: unknown): number {
     const amount = Number(value);
-    if (!Number.isFinite(amount) || amount < 0) throw new AppError('price must be a valid positive number.', HttpStatus.BAD_REQUEST);
+    if (!Number.isFinite(amount) || amount < 0)
+      throw new AppError('price must be a valid positive number.', HttpStatus.BAD_REQUEST);
     return amount;
   }
 
@@ -60,7 +62,8 @@ export class PlanService {
 
   int(value: unknown, field: string): number {
     const parsed = Number(value);
-    if (!Number.isInteger(parsed) || parsed < 0) throw new AppError(field + ' must be a positive integer.', HttpStatus.BAD_REQUEST);
+    if (!Number.isInteger(parsed) || parsed < 0)
+      throw new AppError(field + ' must be a positive integer.', HttpStatus.BAD_REQUEST);
     return parsed;
   }
 
@@ -77,26 +80,37 @@ export class PlanService {
   }
 
   ids(value: unknown): string[] | undefined {
-    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && Boolean(item.trim())) : undefined;
+    return Array.isArray(value)
+      ? value.filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
+      : undefined;
   }
 
   private async ensureVehicleType(businessId: string, vehicleTypeId: string): Promise<void> {
-    if (!(await planRepository.existsVehicleTypeForBusiness(businessId, vehicleTypeId))) throw new AppError('Vehicle type was not found.', HttpStatus.NOT_FOUND);
+    if (!(await planRepository.existsVehicleTypeForBusiness(businessId, vehicleTypeId)))
+      throw new AppError('Vehicle type was not found.', HttpStatus.NOT_FOUND);
   }
 
   private async ensureServices(businessId: string, serviceIds?: string[]): Promise<void> {
     if (!serviceIds?.length) return;
-    if ((await planRepository.countServicesForBusiness(businessId, serviceIds)) !== new Set(serviceIds).size) {
-      throw new AppError('One or more services were not found for this business.', HttpStatus.NOT_FOUND);
+    if (
+      (await planRepository.countServicesForBusiness(businessId, serviceIds)) !==
+      new Set(serviceIds).size
+    ) {
+      throw new AppError(
+        'One or more services were not found for this business.',
+        HttpStatus.NOT_FOUND,
+      );
     }
   }
 
   private requireOwner(user: AppUser): void {
-    if (user.role !== 'OWNER') throw new AppError('Only owners can manage plans.', HttpStatus.FORBIDDEN);
+    if (user.role !== 'OWNER')
+      throw new AppError('Only owners can manage plans.', HttpStatus.FORBIDDEN);
   }
 
   private requireBusinessId(user: AppUser): string {
-    if (!user.businessId) throw new AppError('Business account is required.', HttpStatus.BAD_REQUEST);
+    if (!user.businessId)
+      throw new AppError('Business account is required.', HttpStatus.BAD_REQUEST);
     return user.businessId;
   }
 }

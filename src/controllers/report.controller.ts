@@ -8,7 +8,10 @@ import { AppError } from '../utils/app-error.js';
 
 export class ReportController {
   ownerSummary = async (req: Request, res: Response): Promise<void> => {
-    const summary = await reportService.ownerSummary(this.user(req), reportService.range(req.query.from, req.query.to));
+    const summary = await reportService.ownerSummary(
+      this.user(req),
+      reportService.range(req.query.from, req.query.to),
+    );
     ApiResponse.success(res, { summary }, 'Owner report summary loaded.');
   };
 

@@ -1,9 +1,13 @@
 import { redisService } from '../../infrastructure/redis/index.js';
-import type { CustomerDashboardSummary, OwnerDashboardSummary } from '../../models/dashboard.model.js';
+import type {
+  CustomerDashboardSummary,
+  OwnerDashboardSummary,
+} from '../../models/dashboard.model.js';
 
 const TTL_SECONDS = 120;
 const ownerKey = (businessId: string): string => `dashboard:${businessId}:owner`;
-const customerKey = (businessId: string, customerId: string): string => `dashboard:${businessId}:customer:${customerId}`;
+const customerKey = (businessId: string, customerId: string): string =>
+  `dashboard:${businessId}:customer:${customerId}`;
 
 export class DashboardCacheRepository {
   async findOwner(businessId: string): Promise<OwnerDashboardSummary | null> {
@@ -21,7 +25,10 @@ export class DashboardCacheRepository {
     } catch {}
   }
 
-  async findCustomer(businessId: string, customerId: string): Promise<CustomerDashboardSummary | null> {
+  async findCustomer(
+    businessId: string,
+    customerId: string,
+  ): Promise<CustomerDashboardSummary | null> {
     try {
       const value = await redisService.get(customerKey(businessId, customerId));
       return value ? (JSON.parse(value) as CustomerDashboardSummary) : null;
@@ -30,9 +37,17 @@ export class DashboardCacheRepository {
     }
   }
 
-  async saveCustomer(businessId: string, customerId: string, summary: CustomerDashboardSummary): Promise<void> {
+  async saveCustomer(
+    businessId: string,
+    customerId: string,
+    summary: CustomerDashboardSummary,
+  ): Promise<void> {
     try {
-      await redisService.set(customerKey(businessId, customerId), JSON.stringify(summary), TTL_SECONDS);
+      await redisService.set(
+        customerKey(businessId, customerId),
+        JSON.stringify(summary),
+        TTL_SECONDS,
+      );
     } catch {}
   }
 }

@@ -36,7 +36,10 @@ export class ServiceService {
     return service;
   }
 
-  async create(user: AppUser, input: Omit<CreateServiceInput, 'businessId'>): Promise<ServiceRecord> {
+  async create(
+    user: AppUser,
+    input: Omit<CreateServiceInput, 'businessId'>,
+  ): Promise<ServiceRecord> {
     this.requireOwner(user);
 
     const businessId = this.requireBusinessId(user);

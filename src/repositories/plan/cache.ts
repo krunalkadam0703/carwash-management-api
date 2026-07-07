@@ -8,7 +8,9 @@ const activeListKey = (businessId: string): string => `plan:${businessId}:active
 export class PlanCacheRepository {
   async findMany(businessId: string, activeOnly = false): Promise<PlanRecord[] | null> {
     try {
-      const value = await redisService.get(activeOnly ? activeListKey(businessId) : listKey(businessId));
+      const value = await redisService.get(
+        activeOnly ? activeListKey(businessId) : listKey(businessId),
+      );
       return value ? (JSON.parse(value) as PlanRecord[]) : null;
     } catch {
       return null;
@@ -17,7 +19,11 @@ export class PlanCacheRepository {
 
   async saveMany(businessId: string, plans: PlanRecord[], activeOnly = false): Promise<void> {
     try {
-      await redisService.set(activeOnly ? activeListKey(businessId) : listKey(businessId), JSON.stringify(plans), TTL_SECONDS);
+      await redisService.set(
+        activeOnly ? activeListKey(businessId) : listKey(businessId),
+        JSON.stringify(plans),
+        TTL_SECONDS,
+      );
     } catch {}
   }
 

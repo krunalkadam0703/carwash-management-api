@@ -6,17 +6,23 @@ import { AppError } from '../utils/app-error.js';
 
 export class DashboardService {
   ownerSummary(user: AppUser): Promise<OwnerDashboardSummary> {
-    if (user.role !== 'OWNER') throw new AppError('Only owners can view owner dashboard summary.', HttpStatus.FORBIDDEN);
+    if (user.role !== 'OWNER')
+      throw new AppError('Only owners can view owner dashboard summary.', HttpStatus.FORBIDDEN);
     return dashboardRepository.ownerSummary(this.requireBusinessId(user));
   }
 
   customerSummary(user: AppUser): Promise<CustomerDashboardSummary> {
-    if (user.role !== 'CUSTOMER') throw new AppError('Only customers can view customer dashboard summary.', HttpStatus.FORBIDDEN);
+    if (user.role !== 'CUSTOMER')
+      throw new AppError(
+        'Only customers can view customer dashboard summary.',
+        HttpStatus.FORBIDDEN,
+      );
     return dashboardRepository.customerSummary(this.requireBusinessId(user), user.id);
   }
 
   private requireBusinessId(user: AppUser): string {
-    if (!user.businessId) throw new AppError('Business account is required.', HttpStatus.BAD_REQUEST);
+    if (!user.businessId)
+      throw new AppError('Business account is required.', HttpStatus.BAD_REQUEST);
     return user.businessId;
   }
 }

@@ -10,7 +10,10 @@ type PlanDelegate = {
 };
 type ServiceDelegate = { count(args: unknown): Promise<number> };
 type VehicleTypeDelegate = { findFirst(args: unknown): Promise<{ id: string } | null> };
-type PlanServiceDelegate = { deleteMany(args: unknown): Promise<unknown>; createMany(args: unknown): Promise<unknown> };
+type PlanServiceDelegate = {
+  deleteMany(args: unknown): Promise<unknown>;
+  createMany(args: unknown): Promise<unknown>;
+};
 type AppDb = {
   plan: PlanDelegate;
   service: ServiceDelegate;
@@ -37,7 +40,12 @@ export class PlanPersistentStorageRepository {
   }
 
   async existsVehicleTypeForBusiness(businessId: string, vehicleTypeId: string): Promise<boolean> {
-    return Boolean(await db.vehicleType.findFirst({ where: { id: vehicleTypeId, businessId }, select: { id: true } }));
+    return Boolean(
+      await db.vehicleType.findFirst({
+        where: { id: vehicleTypeId, businessId },
+        select: { id: true },
+      }),
+    );
   }
 
   async countServicesForBusiness(businessId: string, serviceIds: string[]): Promise<number> {
@@ -48,7 +56,10 @@ export class PlanPersistentStorageRepository {
     const { serviceIds, ...data } = input;
     return db.$transaction(async (tx) => {
       const plan = await tx.plan.create({ data });
-      if (serviceIds?.length) await tx.planService.createMany({ data: serviceIds.map((serviceId) => ({ planId: plan.id, serviceId })) });
+      if (serviceIds?.length)
+        await tx.planService.createMany({
+          data: serviceIds.map((serviceId) => ({ planId: plan.id, serviceId })),
+        });
       return mapPlan(plan);
     });
   }
@@ -59,7 +70,10 @@ export class PlanPersistentStorageRepository {
       const plan = await tx.plan.update({ where: { id }, data });
       if (serviceIds) {
         await tx.planService.deleteMany({ where: { planId: id } });
-        if (serviceIds.length) await tx.planService.createMany({ data: serviceIds.map((serviceId) => ({ planId: id, serviceId })) });
+        if (serviceIds.length)
+          await tx.planService.createMany({
+            data: serviceIds.map((serviceId) => ({ planId: id, serviceId })),
+          });
       }
       return mapPlan(plan);
     });

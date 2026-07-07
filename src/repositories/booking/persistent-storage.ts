@@ -1,5 +1,9 @@
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
-import type { BookingRecord, CreateBookingInput, UpdateBookingStatusInput } from '../../models/booking.model.js';
+import type {
+  BookingRecord,
+  CreateBookingInput,
+  UpdateBookingStatusInput,
+} from '../../models/booking.model.js';
 
 type PrismaBooking = Omit<BookingRecord, 'amount'> & { amount?: { toString(): string } | null };
 type VehicleLite = { customerId: string };
@@ -15,7 +19,10 @@ type ServiceDelegate = { findFirst(args: unknown): Promise<ServiceLite | null> }
 type AppDb = { booking: BookingDelegate; vehicle: VehicleDelegate; service: ServiceDelegate };
 
 const db = prisma as unknown as AppDb;
-const mapBooking = (row: PrismaBooking): BookingRecord => ({ ...row, amount: row.amount?.toString() ?? null });
+const mapBooking = (row: PrismaBooking): BookingRecord => ({
+  ...row,
+  amount: row.amount?.toString() ?? null,
+});
 
 export class BookingPersistentStorageRepository {
   async findManyByBusinessId(businessId: string, customerId?: string): Promise<BookingRecord[]> {
@@ -58,7 +65,8 @@ export class BookingPersistentStorageRepository {
         status: input.status,
         workerId: input.workerId,
         startedAt: input.status === 'IN_PROGRESS' ? new Date() : undefined,
-        completedAt: input.status === 'COMPLETED' || input.status === 'SKIPPED' ? new Date() : undefined,
+        completedAt:
+          input.status === 'COMPLETED' || input.status === 'SKIPPED' ? new Date() : undefined,
         cancelledAt: input.status === 'CANCELLED' ? new Date() : undefined,
         skipReason: input.skipReason,
       },

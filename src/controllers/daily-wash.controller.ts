@@ -8,22 +8,34 @@ import { HttpStatus } from '../constants/http.js';
 
 export class DailyWashController {
   list = async (req: Request, res: Response): Promise<void> => {
-    const dailyWashes = await dailyWashService.list(this.user(req), req.query.date ? dailyWashService.date(req.query.date) : undefined);
+    const dailyWashes = await dailyWashService.list(
+      this.user(req),
+      req.query.date ? dailyWashService.date(req.query.date) : undefined,
+    );
     ApiResponse.success(res, { dailyWashes }, 'Daily washes loaded.');
   };
 
   generate = async (req: Request, res: Response): Promise<void> => {
-    const dailyWashes = await dailyWashService.generate(this.user(req), dailyWashService.date(req.body.date));
+    const dailyWashes = await dailyWashService.generate(
+      this.user(req),
+      dailyWashService.date(req.body.date),
+    );
     ApiResponse.success(res, { dailyWashes }, 'Daily washes generated.');
   };
 
   start = async (req: Request, res: Response): Promise<void> => {
-    const dailyWash = await dailyWashService.start(this.user(req), dailyWashService.text(req.params.id, 'id'));
+    const dailyWash = await dailyWashService.start(
+      this.user(req),
+      dailyWashService.text(req.params.id, 'id'),
+    );
     ApiResponse.success(res, { dailyWash }, 'Daily wash started.');
   };
 
   complete = async (req: Request, res: Response): Promise<void> => {
-    const dailyWash = await dailyWashService.complete(this.user(req), dailyWashService.text(req.params.id, 'id'));
+    const dailyWash = await dailyWashService.complete(
+      this.user(req),
+      dailyWashService.text(req.params.id, 'id'),
+    );
     ApiResponse.success(res, { dailyWash }, 'Daily wash completed.');
   };
 

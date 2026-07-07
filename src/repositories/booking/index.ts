@@ -1,4 +1,8 @@
-import type { BookingRecord, CreateBookingInput, UpdateBookingStatusInput } from '../../models/booking.model.js';
+import type {
+  BookingRecord,
+  CreateBookingInput,
+  UpdateBookingStatusInput,
+} from '../../models/booking.model.js';
 import { bookingPersistentStorageRepository } from './persistent-storage.js';
 
 export class BookingRepository {

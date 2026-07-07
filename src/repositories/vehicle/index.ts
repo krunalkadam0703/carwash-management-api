@@ -1,4 +1,8 @@
-import type { CreateVehicleInput, UpdateVehicleInput, VehicleRecord } from '../../models/vehicle.model.js';
+import type {
+  CreateVehicleInput,
+  UpdateVehicleInput,
+  VehicleRecord,
+} from '../../models/vehicle.model.js';
 import { vehicleCacheRepository } from './cache.js';
 import { vehiclePersistentStorageRepository } from './persistent-storage.js';
 
@@ -7,7 +11,10 @@ export class VehicleRepository {
     const cached = await vehicleCacheRepository.findMany(businessId, customerId);
     if (cached) return cached;
 
-    const vehicles = await vehiclePersistentStorageRepository.findManyByBusinessId(businessId, customerId);
+    const vehicles = await vehiclePersistentStorageRepository.findManyByBusinessId(
+      businessId,
+      customerId,
+    );
     await vehicleCacheRepository.saveMany(businessId, vehicles, customerId);
     return vehicles;
   }
@@ -21,7 +28,10 @@ export class VehicleRepository {
   }
 
   existsVehicleTypeForBusiness(businessId: string, vehicleTypeId: string): Promise<boolean> {
-    return vehiclePersistentStorageRepository.existsVehicleTypeForBusiness(businessId, vehicleTypeId);
+    return vehiclePersistentStorageRepository.existsVehicleTypeForBusiness(
+      businessId,
+      vehicleTypeId,
+    );
   }
 
   async create(input: CreateVehicleInput): Promise<VehicleRecord> {
@@ -33,7 +43,8 @@ export class VehicleRepository {
   async update(input: UpdateVehicleInput, previousCustomerId: string): Promise<VehicleRecord> {
     const vehicle = await vehiclePersistentStorageRepository.update(input);
     await vehicleCacheRepository.invalidateBusiness(input.businessId, previousCustomerId);
-    if (vehicle.customerId !== previousCustomerId) await vehicleCacheRepository.invalidateBusiness(input.businessId, vehicle.customerId);
+    if (vehicle.customerId !== previousCustomerId)
+      await vehicleCacheRepository.invalidateBusiness(input.businessId, vehicle.customerId);
     return vehicle;
   }
 }

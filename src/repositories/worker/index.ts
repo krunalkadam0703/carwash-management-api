@@ -1,4 +1,9 @@
-import type { CreateWorkerAssignmentInput, UpdateWorkerStatusInput, WorkerAssignmentRecord, WorkerStatusRecord } from '../../models/worker.model.js';
+import type {
+  CreateWorkerAssignmentInput,
+  UpdateWorkerStatusInput,
+  WorkerAssignmentRecord,
+  WorkerStatusRecord,
+} from '../../models/worker.model.js';
 import { workerPersistentStorageRepository } from './persistent-storage.js';
 
 export class WorkerRepository {
@@ -18,7 +23,10 @@ export class WorkerRepository {
     return workerPersistentStorageRepository.upsertStatus(input);
   }
 
-  findAssignmentsByBusinessId(businessId: string, workerId?: string): Promise<WorkerAssignmentRecord[]> {
+  findAssignmentsByBusinessId(
+    businessId: string,
+    workerId?: string,
+  ): Promise<WorkerAssignmentRecord[]> {
     return workerPersistentStorageRepository.findAssignmentsByBusinessId(businessId, workerId);
   }
 

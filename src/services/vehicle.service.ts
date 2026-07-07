@@ -1,6 +1,10 @@
 import { HttpStatus } from '../constants/http.js';
 import type { AppUser } from '../models/auth.model.js';
-import type { CreateVehicleInput, UpdateVehicleInput, VehicleRecord } from '../models/vehicle.model.js';
+import type {
+  CreateVehicleInput,
+  UpdateVehicleInput,
+  VehicleRecord,
+} from '../models/vehicle.model.js';
 import { vehicleRepository } from '../repositories/vehicle/index.js';
 import { AppError } from '../utils/app-error.js';
 
@@ -10,7 +14,10 @@ type UpdateBody = Omit<UpdateVehicleInput, 'id' | 'businessId'>;
 export class VehicleService {
   async list(user: AppUser): Promise<VehicleRecord[]> {
     const businessId = this.requireBusinessId(user);
-    return vehicleRepository.findManyByBusinessId(businessId, user.role === 'CUSTOMER' ? user.id : undefined);
+    return vehicleRepository.findManyByBusinessId(
+      businessId,
+      user.role === 'CUSTOMER' ? user.id : undefined,
+    );
   }
 
   async getById(user: AppUser, id: string): Promise<VehicleRecord> {
@@ -21,7 +28,8 @@ export class VehicleService {
 
   async create(user: AppUser, input: CreateBody): Promise<VehicleRecord> {
     const businessId = this.requireBusinessId(user);
-    const customerId = user.role === 'CUSTOMER' ? user.id : this.text(input.customerId, 'customerId');
+    const customerId =
+      user.role === 'CUSTOMER' ? user.id : this.text(input.customerId, 'customerId');
     await this.ensureCustomer(businessId, customerId);
     await this.ensureVehicleType(businessId, input.vehicleTypeId);
     return vehicleRepository.create({ ...input, businessId, customerId });
@@ -38,7 +46,8 @@ export class VehicleService {
   }
 
   text(value: unknown, field: string): string {
-    if (typeof value !== 'string' || !value.trim()) throw new AppError(field + ' is required.', HttpStatus.BAD_REQUEST);
+    if (typeof value !== 'string' || !value.trim())
+      throw new AppError(field + ' is required.', HttpStatus.BAD_REQUEST);
     return value.trim();
   }
 
@@ -57,23 +66,28 @@ export class VehicleService {
   }
 
   private async ensureCustomer(businessId: string, customerId: string): Promise<void> {
-    if (!(await vehicleRepository.existsCustomerForBusiness(businessId, customerId))) throw new AppError('Customer was not found for this business.', HttpStatus.NOT_FOUND);
+    if (!(await vehicleRepository.existsCustomerForBusiness(businessId, customerId)))
+      throw new AppError('Customer was not found for this business.', HttpStatus.NOT_FOUND);
   }
 
   private async ensureVehicleType(businessId: string, vehicleTypeId: string): Promise<void> {
-    if (!(await vehicleRepository.existsVehicleTypeForBusiness(businessId, vehicleTypeId))) throw new AppError('Vehicle type was not found.', HttpStatus.NOT_FOUND);
+    if (!(await vehicleRepository.existsVehicleTypeForBusiness(businessId, vehicleTypeId)))
+      throw new AppError('Vehicle type was not found.', HttpStatus.NOT_FOUND);
   }
 
   private ensureCanAccess(user: AppUser, vehicle: VehicleRecord): void {
-    if (user.role === 'CUSTOMER' && vehicle.customerId !== user.id) throw new AppError('Vehicle was not found.', HttpStatus.NOT_FOUND);
+    if (user.role === 'CUSTOMER' && vehicle.customerId !== user.id)
+      throw new AppError('Vehicle was not found.', HttpStatus.NOT_FOUND);
   }
 
   private requireOwner(user: AppUser): void {
-    if (user.role !== 'OWNER') throw new AppError('Only owners can assign vehicles to customers.', HttpStatus.FORBIDDEN);
+    if (user.role !== 'OWNER')
+      throw new AppError('Only owners can assign vehicles to customers.', HttpStatus.FORBIDDEN);
   }
 
   private requireBusinessId(user: AppUser): string {
-    if (!user.businessId) throw new AppError('Business account is required.', HttpStatus.BAD_REQUEST);
+    if (!user.businessId)
+      throw new AppError('Business account is required.', HttpStatus.BAD_REQUEST);
     return user.businessId;
   }
 }

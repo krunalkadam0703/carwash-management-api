@@ -1,5 +1,9 @@
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
-import type { CreateSubscriptionPauseInput, PauseSubscriptionRecord, SubscriptionPauseRecord } from '../../models/subscription-pause.model.js';
+import type {
+  CreateSubscriptionPauseInput,
+  PauseSubscriptionRecord,
+  SubscriptionPauseRecord,
+} from '../../models/subscription-pause.model.js';
 
 type PauseDelegate = {
   findMany(args: unknown): Promise<SubscriptionPauseRecord[]>;
@@ -16,14 +20,20 @@ type AppDb = {
 const db = prisma as unknown as AppDb;
 
 export class SubscriptionPausePersistentStorageRepository {
-  findManyByBusinessId(businessId: string, customerId?: string): Promise<SubscriptionPauseRecord[]> {
+  findManyByBusinessId(
+    businessId: string,
+    customerId?: string,
+  ): Promise<SubscriptionPauseRecord[]> {
     return db.subscriptionPause.findMany({
       where: { businessId, ...(customerId ? { customerId } : {}) },
       orderBy: { startDate: 'desc' },
     });
   }
 
-  findSubscription(businessId: string, subscriptionId: string): Promise<PauseSubscriptionRecord | null> {
+  findSubscription(
+    businessId: string,
+    subscriptionId: string,
+  ): Promise<PauseSubscriptionRecord | null> {
     return db.vehicleSubscription.findFirst({
       where: { id: subscriptionId, businessId },
       select: { id: true, businessId: true, customerId: true, status: true },
@@ -35,4 +45,5 @@ export class SubscriptionPausePersistentStorageRepository {
   }
 }
 
-export const subscriptionPausePersistentStorageRepository = new SubscriptionPausePersistentStorageRepository();
+export const subscriptionPausePersistentStorageRepository =
+  new SubscriptionPausePersistentStorageRepository();

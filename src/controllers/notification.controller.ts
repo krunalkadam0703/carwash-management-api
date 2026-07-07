@@ -18,7 +18,10 @@ export class NotificationController {
   };
 
   markRead = async (req: Request, res: Response): Promise<void> => {
-    const notification = await notificationService.markRead(this.user(req), notificationService.text(req.params.id, 'id'));
+    const notification = await notificationService.markRead(
+      this.user(req),
+      notificationService.text(req.params.id, 'id'),
+    );
     ApiResponse.success(res, { notification }, 'Notification marked read.');
   };
 
@@ -28,7 +31,10 @@ export class NotificationController {
   };
 
   archive = async (req: Request, res: Response): Promise<void> => {
-    const notification = await notificationService.archive(this.user(req), notificationService.text(req.params.id, 'id'));
+    const notification = await notificationService.archive(
+      this.user(req),
+      notificationService.text(req.params.id, 'id'),
+    );
     ApiResponse.success(res, { notification }, 'Notification archived.');
   };
 

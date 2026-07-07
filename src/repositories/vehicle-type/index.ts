@@ -14,7 +14,8 @@ export class VehicleTypeRepository {
       return cached;
     }
 
-    const vehicleTypes = await vehicleTypePersistentStorageRepository.findManyByBusinessId(businessId);
+    const vehicleTypes =
+      await vehicleTypePersistentStorageRepository.findManyByBusinessId(businessId);
     await vehicleTypeCacheRepository.saveMany(businessId, vehicleTypes);
     return vehicleTypes;
   }

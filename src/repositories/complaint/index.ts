@@ -1,4 +1,8 @@
-import type { ComplaintRecord, CreateComplaintInput, UpdateComplaintInput } from '../../models/complaint.model.js';
+import type {
+  ComplaintRecord,
+  CreateComplaintInput,
+  UpdateComplaintInput,
+} from '../../models/complaint.model.js';
 import { complaintPersistentStorageRepository } from './persistent-storage.js';
 
 export class ComplaintRepository {
@@ -10,7 +14,10 @@ export class ComplaintRepository {
     return complaintPersistentStorageRepository.findById(businessId, id);
   }
 
-  findBooking(businessId: string, bookingId: string): Promise<{ id: string; customerId: string } | null> {
+  findBooking(
+    businessId: string,
+    bookingId: string,
+  ): Promise<{ id: string; customerId: string } | null> {
     return complaintPersistentStorageRepository.findBooking(businessId, bookingId);
   }
 
