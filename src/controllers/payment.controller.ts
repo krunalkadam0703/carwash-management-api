@@ -8,7 +8,10 @@ import { AppError } from '../utils/app-error.js';
 
 export class PaymentController {
   list = async (req: Request, res: Response): Promise<void> => {
-    const payments = await paymentService.list(this.user(req));
+    const payments = await paymentService.list(
+      this.user(req),
+      paymentService.optText(req.query.subscriptionId),
+    );
     ApiResponse.success(res, { payments }, 'Payments loaded.');
   };
 

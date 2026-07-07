@@ -51,6 +51,16 @@ export class SubscriptionController {
     ApiResponse.success(res, { subscription }, 'Subscription rejected.');
   };
 
+  activate = async (req: Request, res: Response): Promise<void> => {
+    const subscription = await subscriptionService.activate(
+      this.user(req),
+      subscriptionService.text(req.params.id, 'id'),
+      subscriptionService.optText(req.body.remarks),
+    );
+
+    ApiResponse.success(res, { subscription }, 'Subscription activated.');
+  };
+
   private user(req: Request): AuthenticatedUser {
     const user = (req as Request & { user?: AuthenticatedUser }).user;
     if (!user) throw new AppError('Authentication is required.', HttpStatus.UNAUTHORIZED);

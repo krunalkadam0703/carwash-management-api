@@ -39,9 +39,17 @@ const mapPayment = (row: PrismaPayment): PaymentRecord => ({
 });
 
 export class PaymentPersistentStorageRepository {
-  async findManyByBusinessId(businessId: string, customerId?: string): Promise<PaymentRecord[]> {
+  async findManyByBusinessId(
+    businessId: string,
+    customerId?: string,
+    subscriptionId?: string,
+  ): Promise<PaymentRecord[]> {
     const rows = await db.payment.findMany({
-      where: { businessId, ...(customerId ? { customerId } : {}) },
+      where: {
+        businessId,
+        ...(customerId ? { customerId } : {}),
+        ...(subscriptionId ? { subscriptionId } : {}),
+      },
       orderBy: { createdAt: 'desc' },
     });
     return rows.map(mapPayment);
@@ -83,7 +91,7 @@ export class PaymentPersistentStorageRepository {
     return mapPayment(row);
   }
 
-  async complete(input: CompletePaymentInput, durationDays: number): Promise<PaymentRecord> {
+  async complete(input: CompletePaymentInput): Promise<PaymentRecord> {
     return db.$transaction(async (tx) => {
       const payment = await tx.payment.update({
         where: { id: input.id },
@@ -96,12 +104,10 @@ export class PaymentPersistentStorageRepository {
           upiRef: input.upiRef,
         },
       });
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + durationDays);
       if (payment.subscriptionId)
         await tx.vehicleSubscription.update({
           where: { id: payment.subscriptionId },
-          data: { status: 'ACTIVE', startDate: new Date(), endDate },
+          data: { status: 'PAYMENT_COMPLETED' },
         });
       return mapPayment(payment);
     });

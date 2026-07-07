@@ -1,7 +1,10 @@
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
 import type { CreatePlanInput, PlanRecord, UpdatePlanInput } from '../../models/plan.model.js';
 
-type PrismaPlanRecord = Omit<PlanRecord, 'price'> & { price: { toString(): string } };
+type PrismaPlanRecord = Omit<PlanRecord, 'price' | 'serviceIds'> & {
+  price: { toString(): string };
+  services?: { serviceId: string }[];
+};
 type PlanDelegate = {
   findMany(args: unknown): Promise<PrismaPlanRecord[]>;
   findFirst(args: unknown): Promise<PrismaPlanRecord | null>;
@@ -23,19 +26,27 @@ type AppDb = {
 };
 
 const db = prisma as unknown as AppDb;
-const mapPlan = (plan: PrismaPlanRecord): PlanRecord => ({ ...plan, price: plan.price.toString() });
+const mapPlan = (plan: PrismaPlanRecord): PlanRecord => ({
+  ...plan,
+  price: plan.price.toString(),
+  serviceIds: plan.services?.map((service) => service.serviceId),
+});
 
 export class PlanPersistentStorageRepository {
   async findManyByBusinessId(businessId: string, activeOnly = false): Promise<PlanRecord[]> {
     const plans = await db.plan.findMany({
       where: { businessId, ...(activeOnly ? { isActive: true } : {}) },
+      include: { services: { select: { serviceId: true } } },
       orderBy: [{ isFeatured: 'desc' }, { createdAt: 'desc' }],
     });
     return plans.map(mapPlan);
   }
 
   async findById(businessId: string, id: string): Promise<PlanRecord | null> {
-    const plan = await db.plan.findFirst({ where: { id, businessId } });
+    const plan = await db.plan.findFirst({
+      where: { id, businessId },
+      include: { services: { select: { serviceId: true } } },
+    });
     return plan ? mapPlan(plan) : null;
   }
 
@@ -60,7 +71,11 @@ export class PlanPersistentStorageRepository {
         await tx.planService.createMany({
           data: serviceIds.map((serviceId) => ({ planId: plan.id, serviceId })),
         });
-      return mapPlan(plan);
+      const savedPlan = await tx.plan.findFirst({
+        where: { id: plan.id },
+        include: { services: { select: { serviceId: true } } },
+      });
+      return mapPlan(savedPlan ?? plan);
     });
   }
 
@@ -75,7 +90,11 @@ export class PlanPersistentStorageRepository {
             data: serviceIds.map((serviceId) => ({ planId: id, serviceId })),
           });
       }
-      return mapPlan(plan);
+      const savedPlan = await tx.plan.findFirst({
+        where: { id: plan.id },
+        include: { services: { select: { serviceId: true } } },
+      });
+      return mapPlan(savedPlan ?? plan);
     });
   }
 }

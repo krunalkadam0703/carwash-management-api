@@ -55,6 +55,14 @@ export class ServiceCacheRepository {
       // Cache failures must not block database flow.
     }
   }
+
+  async invalidateService(businessId: string, id: string): Promise<void> {
+    try {
+      await redisService.delete(serviceCacheKey(businessId, id));
+    } catch {
+      // Cache failures must not block database flow.
+    }
+  }
 }
 
 export const serviceCacheRepository = new ServiceCacheRepository();

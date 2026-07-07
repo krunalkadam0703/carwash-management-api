@@ -12,11 +12,12 @@ import { AppError } from '../utils/app-error.js';
 import { createHmac } from 'node:crypto';
 
 export class PaymentService {
-  async list(user: AppUser): Promise<PaymentRecord[]> {
+  async list(user: AppUser, subscriptionId?: string): Promise<PaymentRecord[]> {
     const businessId = this.requireBusinessId(user);
     return paymentRepository.findManyByBusinessId(
       businessId,
       user.role === 'CUSTOMER' ? user.id : undefined,
+      subscriptionId,
     );
   }
 
@@ -90,7 +91,6 @@ export class PaymentService {
     if (!subscription) throw new AppError('Subscription was not found.', HttpStatus.NOT_FOUND);
     const completed = await paymentRepository.complete(
       { ...input, id, businessId: payment.businessId },
-      subscription.plan.durationDays,
     );
     await auditLogService.create({
       businessId: completed.businessId,
@@ -105,7 +105,7 @@ export class PaymentService {
       userId: completed.customerId,
       type: 'PAYMENT_SUCCESS',
       title: 'Payment successful',
-      message: 'Your subscription is now active.',
+      message: 'Your payment is complete. The owner will activate your subscription.',
       actionUrl: `/customer/plans`,
       metadata: { paymentId: completed.id, subscriptionId: completed.subscriptionId },
     });
@@ -207,7 +207,7 @@ export class PaymentService {
     payment: PaymentRecord,
     input: { razorpayPaymentId?: string; razorpaySignature?: string },
   ): void {
-    if (!input.razorpayPaymentId && !input.razorpaySignature) return;
+    if (!payment.razorpayOrderId && !input.razorpayPaymentId && !input.razorpaySignature) return;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
     if (!keySecret)
       throw new AppError('Razorpay secret is not configured.', HttpStatus.INTERNAL_SERVER_ERROR);

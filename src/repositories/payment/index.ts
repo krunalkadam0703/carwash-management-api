@@ -8,8 +8,16 @@ import type {
 import { paymentPersistentStorageRepository } from './persistent-storage.js';
 
 export class PaymentRepository {
-  findManyByBusinessId(businessId: string, customerId?: string): Promise<PaymentRecord[]> {
-    return paymentPersistentStorageRepository.findManyByBusinessId(businessId, customerId);
+  findManyByBusinessId(
+    businessId: string,
+    customerId?: string,
+    subscriptionId?: string,
+  ): Promise<PaymentRecord[]> {
+    return paymentPersistentStorageRepository.findManyByBusinessId(
+      businessId,
+      customerId,
+      subscriptionId,
+    );
   }
 
   findById(businessId: string, id: string): Promise<PaymentRecord | null> {
@@ -28,8 +36,8 @@ export class PaymentRepository {
     return paymentPersistentStorageRepository.attachRazorpayOrder(input);
   }
 
-  complete(input: CompletePaymentInput, durationDays: number): Promise<PaymentRecord> {
-    return paymentPersistentStorageRepository.complete(input, durationDays);
+  complete(input: CompletePaymentInput): Promise<PaymentRecord> {
+    return paymentPersistentStorageRepository.complete(input);
   }
 
   fail(input: FailPaymentInput): Promise<PaymentRecord> {

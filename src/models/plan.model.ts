@@ -16,6 +16,7 @@ export type PlanRecord = {
   interiorCleaning: boolean;
   foamWash: boolean;
   ceramicCoating: boolean;
+  serviceIds?: string[];
   createdAt: Date;
   updatedAt: Date;
 };

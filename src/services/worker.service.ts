@@ -60,8 +60,7 @@ export class WorkerService {
       throw new AppError('Worker was not found.', HttpStatus.NOT_FOUND);
     if (!(await workerRepository.existsVehicleForBusiness(businessId, vehicleId)))
       throw new AppError('Vehicle was not found.', HttpStatus.NOT_FOUND);
-    await workerRepository.upsertStatus({ workerId, businessId, status: 'BUSY' });
-    const assignment = await workerRepository.createAssignment({
+    const assignment = await workerRepository.assignVehicle(businessId, {
       assignedById: user.id,
       workerId,
       vehicleId,

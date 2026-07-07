@@ -62,7 +62,10 @@ export class ServiceRepository {
 
   async delete(businessId: string, id: string): Promise<ServiceRecord> {
     const service = await servicePersistentStorageRepository.delete(id);
-    await serviceCacheRepository.invalidateBusiness(businessId);
+    await Promise.all([
+      serviceCacheRepository.invalidateService(businessId, id),
+      serviceCacheRepository.invalidateBusiness(businessId),
+    ]);
     return service;
   }
 }

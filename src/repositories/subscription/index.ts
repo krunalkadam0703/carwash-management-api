@@ -59,6 +59,22 @@ export class SubscriptionRepository {
     await subscriptionCacheRepository.invalidateBusiness(row.businessId, row.customerId);
     return row;
   }
+
+  async activate(
+    businessId: string,
+    id: string,
+    performedById: string,
+    remarks?: string,
+  ): Promise<SubscriptionRecord> {
+    const row = await subscriptionPersistentStorageRepository.activate(
+      businessId,
+      id,
+      performedById,
+      remarks,
+    );
+    await subscriptionCacheRepository.invalidateBusiness(row.businessId, row.customerId);
+    return row;
+  }
 }
 
 export const subscriptionRepository = new SubscriptionRepository();

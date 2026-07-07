@@ -114,6 +114,37 @@ export class SubscriptionService {
     return subscription;
   }
 
+  async activate(user: AppUser, id: string, remarks?: string): Promise<SubscriptionRecord> {
+    this.requireOwner(user);
+    const row = await this.requireSubscription(this.requireBusinessId(user), id);
+    if (row.status !== 'PAYMENT_COMPLETED')
+      throw new AppError('Only paid subscriptions can be activated.', HttpStatus.CONFLICT);
+    const subscription = await subscriptionRepository.activate(row.businessId, id, user.id, remarks);
+    await auditLogService.create({
+      businessId: row.businessId,
+      userId: user.id,
+      action: 'ACTIVATE_SUBSCRIPTION',
+      entityType: 'VehicleSubscription',
+      entityId: subscription.id,
+      oldData: { status: row.status },
+      newData: {
+        status: subscription.status,
+        startDate: subscription.startDate,
+        endDate: subscription.endDate,
+        restDay: 'MONDAY',
+      },
+    });
+    await notificationService.create({
+      userId: subscription.customerId,
+      type: 'SUBSCRIPTION_APPROVED',
+      title: 'Subscription activated',
+      message: 'Your subscription is active. Monday is kept as the weekly rest day.',
+      actionUrl: `/customer/calendar`,
+      metadata: { subscriptionId: subscription.id },
+    });
+    return subscription;
+  }
+
   text(value: unknown, field: string): string {
     if (typeof value !== 'string' || !value.trim())
       throw new AppError(field + ' is required.', HttpStatus.BAD_REQUEST);

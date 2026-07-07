@@ -3,6 +3,7 @@ export type SubscriptionStatus =
   | 'APPROVED'
   | 'REJECTED'
   | 'PAYMENT_PENDING'
+  | 'PAYMENT_COMPLETED'
   | 'ACTIVE'
   | 'EXPIRED'
   | 'CANCELLED';

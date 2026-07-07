@@ -21,6 +21,7 @@ type AppDb = {
   vehicle: VehicleDelegate;
   workerStatus: WorkerStatusDelegate;
   workerAssignment: WorkerAssignmentDelegate;
+  $transaction<T>(fn: (tx: AppDb) => Promise<T>): Promise<T>;
 };
 
 const db = prisma as unknown as AppDb;
@@ -86,6 +87,20 @@ export class WorkerPersistentStorageRepository {
 
   createAssignment(input: CreateWorkerAssignmentInput): Promise<WorkerAssignmentRecord> {
     return db.workerAssignment.create({ data: input });
+  }
+
+  assignVehicle(
+    businessId: string,
+    input: CreateWorkerAssignmentInput,
+  ): Promise<WorkerAssignmentRecord> {
+    return db.$transaction(async (tx) => {
+      await tx.workerStatus.upsert({
+        where: { workerId: input.workerId },
+        create: { workerId: input.workerId, businessId, status: 'BUSY' },
+        update: { status: 'BUSY' },
+      });
+      return tx.workerAssignment.create({ data: input });
+    });
   }
 
   updateAssignmentStatus(id: string, status: string): Promise<WorkerAssignmentRecord> {

@@ -12,5 +12,6 @@ subscriptionRouter.get('/:id', subscriptionController.getById);
 subscriptionRouter.post('/', subscriptionController.request);
 subscriptionRouter.post('/:id/approve', subscriptionController.approve);
 subscriptionRouter.post('/:id/reject', subscriptionController.reject);
+subscriptionRouter.post('/:id/activate', subscriptionController.activate);
 
 export default subscriptionRouter;

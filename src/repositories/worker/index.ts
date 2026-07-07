@@ -34,6 +34,13 @@ export class WorkerRepository {
     return workerPersistentStorageRepository.createAssignment(input);
   }
 
+  assignVehicle(
+    businessId: string,
+    input: CreateWorkerAssignmentInput,
+  ): Promise<WorkerAssignmentRecord> {
+    return workerPersistentStorageRepository.assignVehicle(businessId, input);
+  }
+
   updateAssignmentStatus(id: string, status: string): Promise<WorkerAssignmentRecord> {
     return workerPersistentStorageRepository.updateAssignmentStatus(id, status);
   }
