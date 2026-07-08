@@ -60,3 +60,18 @@ export type FailPaymentInput = {
   businessId: string;
   failureReason?: string;
 };
+
+export type CompleteWebhookPaymentInput = {
+  paymentId?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
+  paymentMethod?: string;
+};
+
+export type FailWebhookPaymentInput = {
+  paymentId?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  failureReason?: string;
+};

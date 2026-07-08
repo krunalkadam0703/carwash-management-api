@@ -2,8 +2,10 @@ import { prisma } from '../../infrastructure/prisma/prisma.client.js';
 import type {
   AttachRazorpayOrderInput,
   CompletePaymentInput,
+  CompleteWebhookPaymentInput,
   CreateSubscriptionPaymentInput,
   FailPaymentInput,
+  FailWebhookPaymentInput,
   PaymentRecord,
 } from '../../models/payment.model.js';
 
@@ -36,6 +38,17 @@ const db = prisma as unknown as AppDb;
 const mapPayment = (row: PrismaPayment): PaymentRecord => ({
   ...row,
   amount: row.amount.toString(),
+});
+const webhookPaymentWhere = (input: {
+  paymentId?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+}) => ({
+  OR: [
+    ...(input.paymentId ? [{ id: input.paymentId }] : []),
+    ...(input.razorpayOrderId ? [{ razorpayOrderId: input.razorpayOrderId }] : []),
+    ...(input.razorpayPaymentId ? [{ razorpayPaymentId: input.razorpayPaymentId }] : []),
+  ],
 });
 
 export class PaymentPersistentStorageRepository {
@@ -117,6 +130,47 @@ export class PaymentPersistentStorageRepository {
     const row = await db.payment.update({
       where: { id: input.id },
       data: { status: 'FAILED', failureReason: input.failureReason },
+    });
+    return mapPayment(row);
+  }
+
+  async completeFromWebhook(input: CompleteWebhookPaymentInput): Promise<PaymentRecord | null> {
+    return db.$transaction(async (tx) => {
+      const current = await tx.payment.findFirst({ where: webhookPaymentWhere(input) });
+      if (!current) return null;
+      if (current.status === 'PAID') return mapPayment(current);
+      const payment = await tx.payment.update({
+        where: { id: current.id },
+        data: {
+          status: 'PAID',
+          paidAt: current.paidAt ?? new Date(),
+          razorpayOrderId: input.razorpayOrderId ?? current.razorpayOrderId,
+          razorpayPaymentId: input.razorpayPaymentId ?? current.razorpayPaymentId,
+          razorpaySignature: input.razorpaySignature ?? current.razorpaySignature,
+          paymentMethod: input.paymentMethod ?? current.paymentMethod ?? 'razorpay',
+        },
+      });
+      if (payment.subscriptionId)
+        await tx.vehicleSubscription.update({
+          where: { id: payment.subscriptionId },
+          data: { status: 'PAYMENT_COMPLETED' },
+        });
+      return mapPayment(payment);
+    });
+  }
+
+  async failFromWebhook(input: FailWebhookPaymentInput): Promise<PaymentRecord | null> {
+    const current = await db.payment.findFirst({ where: webhookPaymentWhere(input) });
+    if (!current) return null;
+    if (current.status === 'PAID') return mapPayment(current);
+    const row = await db.payment.update({
+      where: { id: current.id },
+      data: {
+        status: 'FAILED',
+        razorpayOrderId: input.razorpayOrderId ?? current.razorpayOrderId,
+        razorpayPaymentId: input.razorpayPaymentId ?? current.razorpayPaymentId,
+        failureReason: input.failureReason,
+      },
     });
     return mapPayment(row);
   }

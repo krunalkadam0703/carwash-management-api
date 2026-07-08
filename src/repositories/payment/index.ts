@@ -1,8 +1,10 @@
 import type {
   AttachRazorpayOrderInput,
   CompletePaymentInput,
+  CompleteWebhookPaymentInput,
   CreateSubscriptionPaymentInput,
   FailPaymentInput,
+  FailWebhookPaymentInput,
   PaymentRecord,
 } from '../../models/payment.model.js';
 import { paymentPersistentStorageRepository } from './persistent-storage.js';
@@ -42,6 +44,14 @@ export class PaymentRepository {
 
   fail(input: FailPaymentInput): Promise<PaymentRecord> {
     return paymentPersistentStorageRepository.fail(input);
+  }
+
+  completeFromWebhook(input: CompleteWebhookPaymentInput): Promise<PaymentRecord | null> {
+    return paymentPersistentStorageRepository.completeFromWebhook(input);
+  }
+
+  failFromWebhook(input: FailWebhookPaymentInput): Promise<PaymentRecord | null> {
+    return paymentPersistentStorageRepository.failFromWebhook(input);
   }
 }
 
