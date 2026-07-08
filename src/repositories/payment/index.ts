@@ -7,6 +7,7 @@ import type {
   FailWebhookPaymentInput,
   PaymentRecord,
 } from '../../models/payment.model.js';
+import { subscriptionCacheRepository } from '../subscription/cache.js';
 import { paymentPersistentStorageRepository } from './persistent-storage.js';
 
 export class PaymentRepository {
@@ -30,28 +31,40 @@ export class PaymentRepository {
     return paymentPersistentStorageRepository.findSubscription(businessId, subscriptionId);
   }
 
-  createSubscriptionPayment(input: CreateSubscriptionPaymentInput): Promise<PaymentRecord> {
-    return paymentPersistentStorageRepository.createSubscriptionPayment(input);
+  async createSubscriptionPayment(input: CreateSubscriptionPaymentInput): Promise<PaymentRecord> {
+    const payment = await paymentPersistentStorageRepository.createSubscriptionPayment(input);
+    await subscriptionCacheRepository.invalidateBusiness(payment.businessId, payment.customerId);
+    return payment;
   }
 
   attachRazorpayOrder(input: AttachRazorpayOrderInput): Promise<PaymentRecord> {
     return paymentPersistentStorageRepository.attachRazorpayOrder(input);
   }
 
-  complete(input: CompletePaymentInput): Promise<PaymentRecord> {
-    return paymentPersistentStorageRepository.complete(input);
+  async complete(input: CompletePaymentInput): Promise<PaymentRecord> {
+    const payment = await paymentPersistentStorageRepository.complete(input);
+    await subscriptionCacheRepository.invalidateBusiness(payment.businessId, payment.customerId);
+    return payment;
   }
 
-  fail(input: FailPaymentInput): Promise<PaymentRecord> {
-    return paymentPersistentStorageRepository.fail(input);
+  async fail(input: FailPaymentInput): Promise<PaymentRecord> {
+    const payment = await paymentPersistentStorageRepository.fail(input);
+    await subscriptionCacheRepository.invalidateBusiness(payment.businessId, payment.customerId);
+    return payment;
   }
 
-  completeFromWebhook(input: CompleteWebhookPaymentInput): Promise<PaymentRecord | null> {
-    return paymentPersistentStorageRepository.completeFromWebhook(input);
+  async completeFromWebhook(input: CompleteWebhookPaymentInput): Promise<PaymentRecord | null> {
+    const payment = await paymentPersistentStorageRepository.completeFromWebhook(input);
+    if (payment)
+      await subscriptionCacheRepository.invalidateBusiness(payment.businessId, payment.customerId);
+    return payment;
   }
 
-  failFromWebhook(input: FailWebhookPaymentInput): Promise<PaymentRecord | null> {
-    return paymentPersistentStorageRepository.failFromWebhook(input);
+  async failFromWebhook(input: FailWebhookPaymentInput): Promise<PaymentRecord | null> {
+    const payment = await paymentPersistentStorageRepository.failFromWebhook(input);
+    if (payment)
+      await subscriptionCacheRepository.invalidateBusiness(payment.businessId, payment.customerId);
+    return payment;
   }
 }
 

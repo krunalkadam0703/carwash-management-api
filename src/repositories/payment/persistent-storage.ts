@@ -127,11 +127,18 @@ export class PaymentPersistentStorageRepository {
   }
 
   async fail(input: FailPaymentInput): Promise<PaymentRecord> {
-    const row = await db.payment.update({
-      where: { id: input.id },
-      data: { status: 'FAILED', failureReason: input.failureReason },
+    return db.$transaction(async (tx) => {
+      const row = await tx.payment.update({
+        where: { id: input.id },
+        data: { status: 'FAILED', failureReason: input.failureReason },
+      });
+      if (row.subscriptionId)
+        await tx.vehicleSubscription.update({
+          where: { id: row.subscriptionId },
+          data: { status: 'APPROVED' },
+        });
+      return mapPayment(row);
     });
-    return mapPayment(row);
   }
 
   async completeFromWebhook(input: CompleteWebhookPaymentInput): Promise<PaymentRecord | null> {
@@ -160,19 +167,26 @@ export class PaymentPersistentStorageRepository {
   }
 
   async failFromWebhook(input: FailWebhookPaymentInput): Promise<PaymentRecord | null> {
-    const current = await db.payment.findFirst({ where: webhookPaymentWhere(input) });
-    if (!current) return null;
-    if (current.status === 'PAID') return mapPayment(current);
-    const row = await db.payment.update({
-      where: { id: current.id },
-      data: {
-        status: 'FAILED',
-        razorpayOrderId: input.razorpayOrderId ?? current.razorpayOrderId,
-        razorpayPaymentId: input.razorpayPaymentId ?? current.razorpayPaymentId,
-        failureReason: input.failureReason,
-      },
+    return db.$transaction(async (tx) => {
+      const current = await tx.payment.findFirst({ where: webhookPaymentWhere(input) });
+      if (!current) return null;
+      if (current.status === 'PAID') return mapPayment(current);
+      const row = await tx.payment.update({
+        where: { id: current.id },
+        data: {
+          status: 'FAILED',
+          razorpayOrderId: input.razorpayOrderId ?? current.razorpayOrderId,
+          razorpayPaymentId: input.razorpayPaymentId ?? current.razorpayPaymentId,
+          failureReason: input.failureReason,
+        },
+      });
+      if (row.subscriptionId)
+        await tx.vehicleSubscription.update({
+          where: { id: row.subscriptionId },
+          data: { status: 'APPROVED' },
+        });
+      return mapPayment(row);
     });
-    return mapPayment(row);
   }
 }
 
