@@ -39,9 +39,13 @@ export class PaymentService {
       customerId: user.id,
       subscriptionId,
       amount: Number(subscription.amount.toString()),
-      receiptId: `sub_${subscriptionId}_${Date.now()}`,
+      receiptId: this.receiptId(),
     });
-    const gateway = await this.createRazorpayOrder(payment);
+    const gateway = await this.createRazorpayOrder(payment).catch(async (error: unknown) => {
+      const message = error instanceof Error ? error.message : 'Failed to create Razorpay order.';
+      await paymentRepository.fail({ id: payment.id, businessId, failureReason: message });
+      throw error;
+    });
     if (gateway)
       payment = await paymentRepository.attachRazorpayOrder({
         id: payment.id,
@@ -162,6 +166,10 @@ export class PaymentService {
     if (!user.businessId)
       throw new AppError('Business account is required.', HttpStatus.BAD_REQUEST);
     return user.businessId;
+  }
+
+  private receiptId(): string {
+    return `sub_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
   }
 
   private async createRazorpayOrder(
