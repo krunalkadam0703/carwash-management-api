@@ -39,6 +39,10 @@ export class ImageRepository {
   createDailyWashImage(input: CreateDailyWashImageInput): Promise<DailyWashImageRecord> {
     return imagePersistentStorageRepository.createDailyWashImage(input);
   }
+
+  findDailyWashImages(dailyWashId: string): Promise<DailyWashImageRecord[]> {
+    return imagePersistentStorageRepository.findDailyWashImages(dailyWashId);
+  }
 }
 
 export const imageRepository = new ImageRepository();

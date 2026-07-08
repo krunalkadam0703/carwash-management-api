@@ -56,6 +56,13 @@ export class ImageService {
     });
   }
 
+  async listDailyWashImages(user: AppUser, dailyWashId: string): Promise<DailyWashImageRecord[]> {
+    const dailyWash = await imageRepository.findDailyWash(this.requireBusinessId(user), dailyWashId);
+    if (!dailyWash || (user.role === 'CUSTOMER' && dailyWash.customerId !== user.id))
+      throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
+    return imageRepository.findDailyWashImages(dailyWashId);
+  }
+
   async uploadServiceImage(
     user: AppUser,
     serviceId: string,

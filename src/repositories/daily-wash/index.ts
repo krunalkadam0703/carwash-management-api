@@ -5,9 +5,15 @@ export class DailyWashRepository {
   findManyByBusinessId(
     businessId: string,
     date?: Date,
+    endDate?: Date,
     customerId?: string,
   ): Promise<DailyWashRecord[]> {
-    return dailyWashPersistentStorageRepository.findManyByBusinessId(businessId, date, customerId);
+    return dailyWashPersistentStorageRepository.findManyByBusinessId(
+      businessId,
+      date,
+      endDate,
+      customerId,
+    );
   }
 
   findById(businessId: string, id: string): Promise<DailyWashRecord | null> {

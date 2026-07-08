@@ -20,12 +20,14 @@ export class DailyWashPersistentStorageRepository {
   findManyByBusinessId(
     businessId: string,
     date?: Date,
+    endDate?: Date,
     customerId?: string,
   ): Promise<DailyWashRecord[]> {
     return db.dailyWashSchedule.findMany({
       where: {
         businessId,
-        ...(date ? { washDate: date } : {}),
+        ...(date && endDate ? { washDate: { gte: date, lte: endDate } } : {}),
+        ...(date && !endDate ? { washDate: date } : {}),
         ...(customerId ? { customerId } : {}),
       },
       orderBy: [{ washDate: 'asc' }, { createdAt: 'asc' }],

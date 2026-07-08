@@ -10,7 +10,12 @@ export class DailyWashController {
   list = async (req: Request, res: Response): Promise<void> => {
     const dailyWashes = await dailyWashService.list(
       this.user(req),
-      req.query.date ? dailyWashService.date(req.query.date) : undefined,
+      req.query.from
+        ? dailyWashService.date(req.query.from)
+        : req.query.date
+          ? dailyWashService.date(req.query.date)
+          : undefined,
+      req.query.to ? dailyWashService.date(req.query.to) : undefined,
     );
     ApiResponse.success(res, { dailyWashes }, 'Daily washes loaded.');
   };
@@ -46,6 +51,15 @@ export class DailyWashController {
       dailyWashService.optText(req.body.reason),
     );
     ApiResponse.success(res, { dailyWash }, 'Daily wash marked unavailable.');
+  };
+
+  updateSlot = async (req: Request, res: Response): Promise<void> => {
+    const dailyWash = await dailyWashService.updateSlot(
+      this.user(req),
+      dailyWashService.text(req.params.id, 'id'),
+      dailyWashService.text(req.body.slot, 'slot'),
+    );
+    ApiResponse.success(res, { dailyWash }, 'Daily wash slot updated.');
   };
 
   private user(req: Request): AuthenticatedUser {

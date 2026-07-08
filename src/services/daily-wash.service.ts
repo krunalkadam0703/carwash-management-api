@@ -1,17 +1,28 @@
 import { HttpStatus } from '../constants/http.js';
 import type { AppUser } from '../models/auth.model.js';
 import type { DailyWashRecord } from '../models/daily-wash.model.js';
+import { redisService } from '../infrastructure/redis/index.js';
 import { dailyWashRepository } from '../repositories/daily-wash/index.js';
 import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/app-error.js';
 
+const slotKey = (businessId: string, dailyWashId: string): string =>
+  `daily-wash-slot:${businessId}:${dailyWashId}`;
+
 export class DailyWashService {
-  async list(user: AppUser, date?: Date): Promise<DailyWashRecord[]> {
+  async list(user: AppUser, date?: Date, endDate?: Date): Promise<DailyWashRecord[]> {
     const businessId = this.requireBusinessId(user);
-    return dailyWashRepository.findManyByBusinessId(
+    const rows = await dailyWashRepository.findManyByBusinessId(
       businessId,
       date,
+      endDate,
       user.role === 'CUSTOMER' ? user.id : undefined,
+    );
+    return Promise.all(
+      rows.map(async (row) => ({
+        ...row,
+        slotOverride: await redisService.get(slotKey(row.businessId, row.id)),
+      })),
     );
   }
 
@@ -47,6 +58,7 @@ export class DailyWashService {
       businessId: this.requireBusinessId(user),
       status: 'COMPLETED',
     });
+    await redisService.delete(slotKey(row.businessId, id));
     await notificationService.create({
       userId: row.customerId,
       type: 'CAR_WASH_COMPLETED',
@@ -62,12 +74,29 @@ export class DailyWashService {
     const row = await this.requireDailyWash(user, id);
     if (user.role === 'CUSTOMER' && row.customerId !== user.id)
       throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
-    return dailyWashRepository.updateStatus({
+    const dailyWash = await dailyWashRepository.updateStatus({
       id,
       businessId: row.businessId,
       status: 'UNAVAILABLE',
       unavailableReason: reason,
     });
+    await redisService.delete(slotKey(row.businessId, id));
+    return dailyWash;
+  }
+
+  async updateSlot(user: AppUser, id: string, slot: string): Promise<DailyWashRecord> {
+    if (user.role !== 'CUSTOMER')
+      throw new AppError('Only customers can change wash slots.', HttpStatus.FORBIDDEN);
+    const row = await this.requireDailyWash(user, id);
+    if (row.customerId !== user.id) throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
+    if (row.status !== 'SCHEDULED')
+      throw new AppError('Only scheduled washes can be changed.', HttpStatus.CONFLICT);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (new Date(row.washDate) <= today)
+      throw new AppError('Only future wash slots can be changed.', HttpStatus.CONFLICT);
+    await redisService.set(slotKey(row.businessId, id), slot, 60 * 60 * 24 * 45);
+    return { ...row, slotOverride: slot };
   }
 
   text(value: unknown, field: string): string {

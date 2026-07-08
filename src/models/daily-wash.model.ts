@@ -16,6 +16,7 @@ export type DailyWashRecord = {
   washDate: Date;
   status: DailyWashStatus;
   unavailableReason?: string | null;
+  slotOverride?: string | null;
   createdAt: Date;
   updatedAt: Date;
 };

@@ -20,7 +20,10 @@ type VehiclePhotoDelegate = {
   findMany(args: unknown): Promise<VehicleImageRecord[]>;
 };
 type ServiceImageDelegate = { create(args: unknown): Promise<ServiceImageRecord> };
-type DailyWashPhotoDelegate = { create(args: unknown): Promise<DailyWashImageRecord> };
+type DailyWashPhotoDelegate = {
+  create(args: unknown): Promise<DailyWashImageRecord>;
+  findMany(args: unknown): Promise<DailyWashImageRecord[]>;
+};
 type AppDb = {
   vehicle: VehicleDelegate;
   dailyWashSchedule: DailyWashDelegate;
@@ -71,6 +74,13 @@ export class ImagePersistentStorageRepository {
 
   createDailyWashImage(input: CreateDailyWashImageInput): Promise<DailyWashImageRecord> {
     return db.dailyWashPhoto.create({ data: input });
+  }
+
+  findDailyWashImages(dailyWashId: string): Promise<DailyWashImageRecord[]> {
+    return db.dailyWashPhoto.findMany({
+      where: { dailyWashId },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 }
 

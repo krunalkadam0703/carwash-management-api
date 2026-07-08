@@ -37,6 +37,14 @@ export class ImageController {
     ApiResponse.success(res, { image }, 'Daily wash image uploaded.', HttpStatus.CREATED);
   };
 
+  listDailyWashImages = async (req: Request, res: Response): Promise<void> => {
+    const images = await imageService.listDailyWashImages(
+      this.user(req),
+      imageService.text(req.params.dailyWashId, 'dailyWashId'),
+    );
+    ApiResponse.success(res, { images }, 'Daily wash images loaded.');
+  };
+
   uploadServiceImage = async (req: Request, res: Response): Promise<void> => {
     const image = await imageService.uploadServiceImage(
       this.user(req),

@@ -16,6 +16,7 @@ imageRouter.use(requireSession);
 
 imageRouter.get('/vehicles/:vehicleId', imageController.listVehicleImages);
 imageRouter.post('/vehicles/:vehicleId', imageUpload, imageController.uploadVehicleImage);
+imageRouter.get('/daily-washes/:dailyWashId', imageController.listDailyWashImages);
 imageRouter.post('/daily-washes/:dailyWashId', imageUpload, imageController.uploadDailyWashImage);
 imageRouter.post('/services/:serviceId', imageUpload, imageController.uploadServiceImage);
 
