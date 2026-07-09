@@ -14,6 +14,7 @@ type WorkerStatusDelegate = {
 type WorkerAssignmentDelegate = {
   findMany(args: unknown): Promise<WorkerAssignmentRecord[]>;
   create(args: unknown): Promise<WorkerAssignmentRecord>;
+  updateMany(args: unknown): Promise<unknown>;
   update(args: unknown): Promise<WorkerAssignmentRecord>;
 };
 type AppDb = {
@@ -107,6 +108,10 @@ export class WorkerPersistentStorageRepository {
     input: CreateWorkerAssignmentInput,
   ): Promise<WorkerAssignmentRecord> {
     return db.$transaction(async (tx) => {
+      await tx.workerAssignment.updateMany({
+        where: { vehicleId: input.vehicleId, status: { in: ['PENDING', 'IN_PROGRESS'] } },
+        data: { status: 'COMPLETED', completedAt: new Date() },
+      });
       await tx.workerStatus.upsert({
         where: { workerId: input.workerId },
         create: { workerId: input.workerId, businessId, status: 'BUSY' },

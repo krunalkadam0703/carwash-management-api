@@ -9,23 +9,33 @@ import { AppError } from '../utils/app-error.js';
 
 const slotKey = (businessId: string, dailyWashId: string): string =>
   `daily-wash-slot:${businessId}:${dailyWashId}`;
+const workerKey = (businessId: string, dailyWashId: string): string =>
+  `daily-wash-worker:${businessId}:${dailyWashId}`;
 
 export class DailyWashService {
   async list(user: AppUser, date?: Date, endDate?: Date): Promise<DailyWashRecord[]> {
     const businessId = this.requireBusinessId(user);
-    let rows = await dailyWashRepository.findManyByBusinessId(
+    const rows = await dailyWashRepository.findManyByBusinessId(
       businessId,
       date,
       endDate,
       user.role === 'CUSTOMER' ? user.id : undefined,
     );
-    if (user.role === 'WORKER') rows = await this.onlyAssignedRows(user, rows);
-    return Promise.all(
-      rows.map(async (row) => ({
-        ...row,
-        slotOverride: await redisService.get(slotKey(row.businessId, row.id)),
-      })),
+    const permanentWorkerByVehicle = await this.activeWorkerByVehicle(businessId);
+    const enriched = await Promise.all(
+      rows.map(async (row) => {
+        const temporaryWorkerId = await redisService.get(workerKey(row.businessId, row.id));
+        return {
+          ...row,
+          slotOverride: await redisService.get(slotKey(row.businessId, row.id)),
+          temporaryWorkerId,
+          assignedWorkerId: temporaryWorkerId ?? permanentWorkerByVehicle.get(row.vehicleId) ?? null,
+        };
+      }),
     );
+    return user.role === 'WORKER'
+      ? enriched.filter((row) => row.assignedWorkerId === user.id)
+      : enriched;
   }
 
   async generate(user: AppUser, date: Date): Promise<DailyWashRecord[]> {
@@ -65,6 +75,7 @@ export class DailyWashService {
       status: 'COMPLETED',
     });
     await redisService.delete(slotKey(row.businessId, id));
+    await redisService.delete(workerKey(row.businessId, id));
     await notificationService.create({
       userId: row.customerId,
       type: 'CAR_WASH_COMPLETED',
@@ -105,6 +116,22 @@ export class DailyWashService {
     return { ...row, slotOverride: slot };
   }
 
+  async assignTemporaryWorker(
+    user: AppUser,
+    id: string,
+    workerId: string,
+  ): Promise<DailyWashRecord> {
+    this.requireOwner(user);
+    const businessId = this.requireBusinessId(user);
+    if (!(await workerRepository.existsWorkerForBusiness(businessId, workerId)))
+      throw new AppError('Worker was not found.', HttpStatus.NOT_FOUND);
+    const row = await this.requireDailyWash(user, id);
+    if (row.status === 'COMPLETED')
+      throw new AppError('Completed washes cannot be reassigned.', HttpStatus.CONFLICT);
+    await redisService.set(workerKey(row.businessId, id), workerId, 60 * 60 * 36);
+    return { ...row, temporaryWorkerId: workerId, assignedWorkerId: workerId };
+  }
+
   text(value: unknown, field: string): string {
     if (typeof value !== 'string' || !value.trim())
       throw new AppError(field + ' is required.', HttpStatus.BAD_REQUEST);
@@ -134,26 +161,23 @@ export class DailyWashService {
   private async ensureCanAccess(user: AppUser, row: DailyWashRecord): Promise<void> {
     if (user.role === 'CUSTOMER' && row.customerId !== user.id)
       throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
-    if (user.role === 'WORKER' && !(await this.assignedVehicleIds(user)).has(row.vehicleId))
+    if (user.role !== 'WORKER') return;
+    if ((await this.assignedWorkerId(row)) !== user.id)
       throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
   }
 
-  private async onlyAssignedRows(
-    user: AppUser,
-    rows: DailyWashRecord[],
-  ): Promise<DailyWashRecord[]> {
-    const vehicleIds = await this.assignedVehicleIds(user);
-    return rows.filter((row) => vehicleIds.has(row.vehicleId));
+  private async assignedWorkerId(row: DailyWashRecord): Promise<string | null> {
+    return (
+      (await redisService.get(workerKey(row.businessId, row.id))) ??
+      (await this.activeWorkerByVehicle(row.businessId)).get(row.vehicleId) ??
+      null
+    );
   }
 
-  private async assignedVehicleIds(user: AppUser): Promise<Set<string>> {
-    const assignments = await workerRepository.findAssignmentsByBusinessId(
-      this.requireBusinessId(user),
-      user.id,
-    );
-    return new Set(
-      assignments.filter((item) => item.status !== 'COMPLETED').map((item) => item.vehicleId),
-    );
+  private async activeWorkerByVehicle(businessId: string): Promise<Map<string, string>> {
+    const assignments = await workerRepository.findAssignmentsByBusinessId(businessId);
+    const active = assignments.filter((item) => item.status !== 'COMPLETED');
+    return new Map(active.map((item) => [item.vehicleId, item.workerId]));
   }
 
   private requireOwner(user: AppUser): void {

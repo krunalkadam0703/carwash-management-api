@@ -13,5 +13,6 @@ dailyWashRouter.post('/:id/start', dailyWashController.start);
 dailyWashRouter.post('/:id/complete', dailyWashController.complete);
 dailyWashRouter.post('/:id/unavailable', dailyWashController.unavailable);
 dailyWashRouter.patch('/:id/slot', dailyWashController.updateSlot);
+dailyWashRouter.patch('/:id/worker', dailyWashController.assignWorker);
 
 export default dailyWashRouter;

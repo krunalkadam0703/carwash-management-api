@@ -3,8 +3,12 @@ import type { AppUser } from '../models/auth.model.js';
 import type { DailyWashImageRecord, ServiceImageRecord, VehicleImageRecord } from '../models/image.model.js';
 import { imageRepository } from '../repositories/image/index.js';
 import { workerRepository } from '../repositories/worker/index.js';
+import { redisService } from '../infrastructure/redis/index.js';
 import { localFileStorageService } from './local-file-storage.service.js';
 import { AppError } from '../utils/app-error.js';
+
+const workerKey = (businessId: string, dailyWashId: string): string =>
+  `daily-wash-worker:${businessId}:${dailyWashId}`;
 
 export class ImageService {
   async listVehicleImages(user: AppUser, vehicleId: string): Promise<VehicleImageRecord[]> {
@@ -47,8 +51,11 @@ export class ImageService {
     const type = this.photoType(photoType);
     if (dailyWash.status === 'COMPLETED')
       throw new AppError('This vehicle is already washed for today.', HttpStatus.CONFLICT);
-    if (user.role === 'WORKER' && !(await this.isAssignedWorker(user, dailyWash.vehicleId)))
-      throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
+    if (user.role === 'WORKER') {
+      const override = await redisService.get(workerKey(this.requireBusinessId(user), dailyWashId));
+      const allowed = override ? override === user.id : await this.isAssignedWorker(user, dailyWash.vehicleId);
+      if (!allowed) throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
+    }
     const stored = await localFileStorageService.saveBuffer(
       'daily-cleanings',
       file.buffer,
@@ -135,8 +142,9 @@ export class ImageService {
   }
 
   private async isAssignedWorker(user: AppUser, vehicleId: string): Promise<boolean> {
+    const businessId = this.requireBusinessId(user);
     const assignments = await workerRepository.findAssignmentsByBusinessId(
-      this.requireBusinessId(user),
+      businessId,
       user.id,
     );
     return assignments.some((item) => item.vehicleId === vehicleId && item.status !== 'COMPLETED');
