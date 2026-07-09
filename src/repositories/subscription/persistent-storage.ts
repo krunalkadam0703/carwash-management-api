@@ -64,6 +64,10 @@ export class SubscriptionPersistentStorageRepository {
   ): Promise<SubscriptionRecord[]> {
     const rows = await db.vehicleSubscription.findMany({
       where: { businessId, ...(customerId ? { customerId } : {}) },
+      include: {
+        customer: { select: { name: true, email: true, phoneNumber: true } },
+        business: { select: { owner: { select: { name: true, email: true, phoneNumber: true } } } },
+      },
       orderBy: { createdAt: 'desc' },
     });
     return rows.map(mapSubscription);

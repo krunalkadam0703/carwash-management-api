@@ -21,6 +21,7 @@ export type WorkerAssignmentRecord = {
   assignedById?: string | null;
   workerId: string;
   vehicleId: string;
+  worker?: { name: string; email: string; phoneNumber?: string | null };
   vehicle?: {
     vehicleNumber: string;
     vehicleName?: string | null;

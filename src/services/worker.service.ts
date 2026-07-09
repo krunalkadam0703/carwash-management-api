@@ -48,6 +48,7 @@ export class WorkerService {
     return workerRepository.findAssignmentsByBusinessId(
       businessId,
       user.role === 'WORKER' ? user.id : undefined,
+      user.role === 'CUSTOMER' ? user.id : undefined,
     );
   }
 

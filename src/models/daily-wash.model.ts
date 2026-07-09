@@ -17,6 +17,7 @@ export type DailyWashRecord = {
   status: DailyWashStatus;
   unavailableReason?: string | null;
   slotOverride?: string | null;
+  queueOrder?: number | null;
   assignedWorkerId?: string | null;
   temporaryWorkerId?: string | null;
   vehicle?: {

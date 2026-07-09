@@ -11,10 +11,13 @@ const slotKey = (businessId: string, dailyWashId: string): string =>
   `daily-wash-slot:${businessId}:${dailyWashId}`;
 const workerKey = (businessId: string, dailyWashId: string): string =>
   `daily-wash-worker:${businessId}:${dailyWashId}`;
+const queueKey = (businessId: string, dailyWashId: string): string =>
+  `daily-wash-queue:${businessId}:${dailyWashId}`;
 
 export class DailyWashService {
   async list(user: AppUser, date?: Date, endDate?: Date): Promise<DailyWashRecord[]> {
     const businessId = this.requireBusinessId(user);
+    await this.ensureSchedules(businessId, date, endDate);
     const rows = await dailyWashRepository.findManyByBusinessId(
       businessId,
       date,
@@ -28,6 +31,7 @@ export class DailyWashService {
         return {
           ...row,
           slotOverride: await redisService.get(slotKey(row.businessId, row.id)),
+          queueOrder: Number(await redisService.get(queueKey(row.businessId, row.id))) || null,
           temporaryWorkerId,
           assignedWorkerId: temporaryWorkerId ?? permanentWorkerByVehicle.get(row.vehicleId) ?? null,
         };
@@ -132,6 +136,17 @@ export class DailyWashService {
     return { ...row, temporaryWorkerId: workerId, assignedWorkerId: workerId };
   }
 
+  async updateQueueOrder(user: AppUser, id: string, queueOrder: number): Promise<DailyWashRecord> {
+    this.requireOwner(user);
+    if (!Number.isInteger(queueOrder) || queueOrder < 0)
+      throw new AppError('queueOrder must be a positive integer.', HttpStatus.BAD_REQUEST);
+    const row = await this.requireDailyWash(user, id);
+    if (row.status === 'COMPLETED')
+      throw new AppError('Completed washes cannot be reordered.', HttpStatus.CONFLICT);
+    await redisService.set(queueKey(row.businessId, id), String(queueOrder), 60 * 60 * 24 * 45);
+    return { ...row, queueOrder };
+  }
+
   text(value: unknown, field: string): string {
     if (typeof value !== 'string' || !value.trim())
       throw new AppError(field + ' is required.', HttpStatus.BAD_REQUEST);
@@ -140,6 +155,12 @@ export class DailyWashService {
 
   optText(value: unknown): string | undefined {
     return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+  }
+
+  number(value: unknown, field: string): number {
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed)) throw new AppError(field + ' is invalid.', HttpStatus.BAD_REQUEST);
+    return parsed;
   }
 
   date(value: unknown): Date {
@@ -178,6 +199,20 @@ export class DailyWashService {
     const assignments = await workerRepository.findAssignmentsByBusinessId(businessId);
     const active = assignments.filter((item) => item.status !== 'COMPLETED');
     return new Map(active.map((item) => [item.vehicleId, item.workerId]));
+  }
+
+  private async ensureSchedules(businessId: string, date?: Date, endDate?: Date): Promise<void> {
+    if (!date) return;
+    const dates = endDate ? this.dateRange(date, endDate) : [date];
+    await Promise.all(dates.map((item) => dailyWashRepository.generateForDate(businessId, item)));
+  }
+
+  private dateRange(start: Date, end: Date): Date[] {
+    const dates: Date[] = [];
+    for (let item = new Date(start); item <= end; item.setDate(item.getDate() + 1)) {
+      dates.push(new Date(item));
+    }
+    return dates;
   }
 
   private requireOwner(user: AppUser): void {

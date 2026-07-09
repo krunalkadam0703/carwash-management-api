@@ -71,6 +71,15 @@ export class DailyWashController {
     ApiResponse.success(res, { dailyWash }, 'Temporary worker assigned.');
   };
 
+  updateQueueOrder = async (req: Request, res: Response): Promise<void> => {
+    const dailyWash = await dailyWashService.updateQueueOrder(
+      this.user(req),
+      dailyWashService.text(req.params.id, 'id'),
+      dailyWashService.number(req.body.queueOrder, 'queueOrder'),
+    );
+    ApiResponse.success(res, { dailyWash }, 'Queue order updated.');
+  };
+
   private user(req: Request): AuthenticatedUser {
     const user = (req as Request & { user?: AuthenticatedUser }).user;
     if (!user) throw new AppError('Authentication is required.', HttpStatus.UNAUTHORIZED);

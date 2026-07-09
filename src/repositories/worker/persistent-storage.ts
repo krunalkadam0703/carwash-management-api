@@ -79,10 +79,12 @@ export class WorkerPersistentStorageRepository {
   findAssignmentsByBusinessId(
     businessId: string,
     workerId?: string,
+    customerId?: string,
   ): Promise<WorkerAssignmentRecord[]> {
     return db.workerAssignment.findMany({
-      where: { ...(workerId ? { workerId } : {}), vehicle: { businessId } },
+      where: { ...(workerId ? { workerId } : {}), vehicle: { businessId, ...(customerId ? { customerId } : {}) } },
       include: {
+        worker: { select: { name: true, email: true, phoneNumber: true } },
         vehicle: {
           select: {
             vehicleNumber: true,

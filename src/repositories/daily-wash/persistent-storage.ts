@@ -62,6 +62,7 @@ export class DailyWashPersistentStorageRepository {
   }
 
   async generateForDate(businessId: string, date: Date): Promise<void> {
+    if (date.getDay() === 1) return;
     const subscriptions = await this.findActiveSubscriptionsForDate(businessId, date);
     if (!subscriptions.length) return;
 

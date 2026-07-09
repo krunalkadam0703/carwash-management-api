@@ -24,6 +24,8 @@ export type SubscriptionRecord = {
   startDate?: Date | null;
   endDate?: Date | null;
   amount: string;
+  customer?: { name: string; email: string; phoneNumber?: string | null };
+  business?: { owner?: { name: string; email: string; phoneNumber?: string | null } };
   autoRenew: boolean;
   washesUsed: number;
   expiryReminderSent: boolean;
