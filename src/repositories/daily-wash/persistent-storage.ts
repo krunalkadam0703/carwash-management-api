@@ -30,6 +30,19 @@ export class DailyWashPersistentStorageRepository {
         ...(date && !endDate ? { washDate: date } : {}),
         ...(customerId ? { customerId } : {}),
       },
+      include: {
+        vehicle: {
+          select: {
+            vehicleNumber: true,
+            vehicleName: true,
+            brand: true,
+            model: true,
+            location: true,
+            availableTimeSlot: true,
+            customer: { select: { name: true, phoneNumber: true, address: true } },
+          },
+        },
+      },
       orderBy: [{ washDate: 'asc' }, { createdAt: 'asc' }],
     });
   }

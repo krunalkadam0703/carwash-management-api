@@ -19,6 +19,15 @@ export type DailyWashRecord = {
   slotOverride?: string | null;
   assignedWorkerId?: string | null;
   temporaryWorkerId?: string | null;
+  vehicle?: {
+    vehicleNumber: string;
+    vehicleName?: string | null;
+    brand?: string | null;
+    model?: string | null;
+    location?: string | null;
+    availableTimeSlot?: string | null;
+    customer?: { name: string; phoneNumber?: string | null; address?: string | null };
+  };
   createdAt: Date;
   updatedAt: Date;
 };
