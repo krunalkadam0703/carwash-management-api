@@ -12,7 +12,7 @@ type VehicleDelegate = {
   findFirst(args: unknown): Promise<{ id: string; customerId: string } | null>;
 };
 type DailyWashDelegate = {
-  findFirst(args: unknown): Promise<{ id: string; customerId: string; vehicleId: string } | null>;
+  findFirst(args: unknown): Promise<{ id: string; customerId: string; vehicleId: string; status: string } | null>;
 };
 type ServiceDelegate = { findFirst(args: unknown): Promise<{ id: string } | null> };
 type VehiclePhotoDelegate = {
@@ -53,10 +53,10 @@ export class ImagePersistentStorageRepository {
   findDailyWash(
     businessId: string,
     dailyWashId: string,
-  ): Promise<{ id: string; customerId: string; vehicleId: string } | null> {
+  ): Promise<{ id: string; customerId: string; vehicleId: string; status: string } | null> {
     return db.dailyWashSchedule.findFirst({
       where: { id: dailyWashId, businessId },
-      select: { id: true, customerId: true, vehicleId: true },
+      select: { id: true, customerId: true, vehicleId: true, status: true },
     });
   }
 

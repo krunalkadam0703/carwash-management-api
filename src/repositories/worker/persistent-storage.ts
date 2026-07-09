@@ -81,6 +81,19 @@ export class WorkerPersistentStorageRepository {
   ): Promise<WorkerAssignmentRecord[]> {
     return db.workerAssignment.findMany({
       where: { ...(workerId ? { workerId } : {}), vehicle: { businessId } },
+      include: {
+        vehicle: {
+          select: {
+            vehicleNumber: true,
+            vehicleName: true,
+            brand: true,
+            model: true,
+            location: true,
+            availableTimeSlot: true,
+            customer: { select: { name: true, phoneNumber: true, address: true } },
+          },
+        },
+      },
       orderBy: { assignedAt: 'desc' },
     });
   }

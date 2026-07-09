@@ -21,6 +21,15 @@ export type WorkerAssignmentRecord = {
   assignedById?: string | null;
   workerId: string;
   vehicleId: string;
+  vehicle?: {
+    vehicleNumber: string;
+    vehicleName?: string | null;
+    brand?: string | null;
+    model?: string | null;
+    location?: string | null;
+    availableTimeSlot?: string | null;
+    customer?: { name: string; phoneNumber?: string | null; address?: string | null };
+  };
   status: AssignmentStatus;
   assignedAt: Date;
   completedAt?: Date | null;

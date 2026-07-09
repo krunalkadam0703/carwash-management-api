@@ -3,6 +3,7 @@ import type { AppUser } from '../models/auth.model.js';
 import type { DailyWashRecord } from '../models/daily-wash.model.js';
 import { redisService } from '../infrastructure/redis/index.js';
 import { dailyWashRepository } from '../repositories/daily-wash/index.js';
+import { workerRepository } from '../repositories/worker/index.js';
 import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/app-error.js';
 
@@ -12,12 +13,13 @@ const slotKey = (businessId: string, dailyWashId: string): string =>
 export class DailyWashService {
   async list(user: AppUser, date?: Date, endDate?: Date): Promise<DailyWashRecord[]> {
     const businessId = this.requireBusinessId(user);
-    const rows = await dailyWashRepository.findManyByBusinessId(
+    let rows = await dailyWashRepository.findManyByBusinessId(
       businessId,
       date,
       endDate,
       user.role === 'CUSTOMER' ? user.id : undefined,
     );
+    if (user.role === 'WORKER') rows = await this.onlyAssignedRows(user, rows);
     return Promise.all(
       rows.map(async (row) => ({
         ...row,
@@ -34,6 +36,8 @@ export class DailyWashService {
   async start(user: AppUser, id: string): Promise<DailyWashRecord> {
     this.requireWorkerOrOwner(user);
     const row = await this.requireDailyWash(user, id);
+    if (row.status === 'COMPLETED')
+      throw new AppError('Completed washes cannot be started again.', HttpStatus.CONFLICT);
     const dailyWash = await dailyWashRepository.updateStatus({
       id,
       businessId: this.requireBusinessId(user),
@@ -53,6 +57,8 @@ export class DailyWashService {
   async complete(user: AppUser, id: string): Promise<DailyWashRecord> {
     this.requireWorkerOrOwner(user);
     const row = await this.requireDailyWash(user, id);
+    if (row.status === 'COMPLETED')
+      throw new AppError('This vehicle is already washed for today.', HttpStatus.CONFLICT);
     const dailyWash = await dailyWashRepository.updateStatus({
       id,
       businessId: this.requireBusinessId(user),
@@ -121,13 +127,33 @@ export class DailyWashService {
   private async requireDailyWash(user: AppUser, id: string): Promise<DailyWashRecord> {
     const row = await dailyWashRepository.findById(this.requireBusinessId(user), id);
     if (!row) throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
-    this.ensureCanAccess(user, row);
+    await this.ensureCanAccess(user, row);
     return row;
   }
 
-  private ensureCanAccess(user: AppUser, row: DailyWashRecord): void {
+  private async ensureCanAccess(user: AppUser, row: DailyWashRecord): Promise<void> {
     if (user.role === 'CUSTOMER' && row.customerId !== user.id)
       throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
+    if (user.role === 'WORKER' && !(await this.assignedVehicleIds(user)).has(row.vehicleId))
+      throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
+  }
+
+  private async onlyAssignedRows(
+    user: AppUser,
+    rows: DailyWashRecord[],
+  ): Promise<DailyWashRecord[]> {
+    const vehicleIds = await this.assignedVehicleIds(user);
+    return rows.filter((row) => vehicleIds.has(row.vehicleId));
+  }
+
+  private async assignedVehicleIds(user: AppUser): Promise<Set<string>> {
+    const assignments = await workerRepository.findAssignmentsByBusinessId(
+      this.requireBusinessId(user),
+      user.id,
+    );
+    return new Set(
+      assignments.filter((item) => item.status !== 'COMPLETED').map((item) => item.vehicleId),
+    );
   }
 
   private requireOwner(user: AppUser): void {

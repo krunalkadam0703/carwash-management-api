@@ -2,6 +2,7 @@ import { HttpStatus } from '../constants/http.js';
 import type { AppUser } from '../models/auth.model.js';
 import type { DailyWashImageRecord, ServiceImageRecord, VehicleImageRecord } from '../models/image.model.js';
 import { imageRepository } from '../repositories/image/index.js';
+import { workerRepository } from '../repositories/worker/index.js';
 import { localFileStorageService } from './local-file-storage.service.js';
 import { AppError } from '../utils/app-error.js';
 
@@ -44,6 +45,10 @@ export class ImageService {
     const dailyWash = await imageRepository.findDailyWash(this.requireBusinessId(user), dailyWashId);
     if (!dailyWash) throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
     const type = this.photoType(photoType);
+    if (dailyWash.status === 'COMPLETED')
+      throw new AppError('This vehicle is already washed for today.', HttpStatus.CONFLICT);
+    if (user.role === 'WORKER' && !(await this.isAssignedWorker(user, dailyWash.vehicleId)))
+      throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
     const stored = await localFileStorageService.saveBuffer(
       'daily-cleanings',
       file.buffer,
@@ -127,6 +132,14 @@ export class ImageService {
     if (!user.businessId)
       throw new AppError('Business account is required.', HttpStatus.BAD_REQUEST);
     return user.businessId;
+  }
+
+  private async isAssignedWorker(user: AppUser, vehicleId: string): Promise<boolean> {
+    const assignments = await workerRepository.findAssignmentsByBusinessId(
+      this.requireBusinessId(user),
+      user.id,
+    );
+    return assignments.some((item) => item.vehicleId === vehicleId && item.status !== 'COMPLETED');
   }
 }
 
