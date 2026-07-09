@@ -15,8 +15,10 @@ const ASSIGNMENT_STATUSES: AssignmentStatus[] = ['PENDING', 'IN_PROGRESS', 'COMP
 
 export class WorkerService {
   async listStatuses(user: AppUser): Promise<WorkerStatusRecord[]> {
+    const statuses = await workerRepository.findStatusesByBusinessId(this.requireBusinessId(user));
+    if (user.role === 'WORKER') return statuses.filter((status) => status.workerId === user.id);
     this.requireOwner(user);
-    return workerRepository.findStatusesByBusinessId(this.requireBusinessId(user));
+    return statuses;
   }
 
   async updateMyStatus(
