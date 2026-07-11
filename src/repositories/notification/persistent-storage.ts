@@ -20,7 +20,7 @@ const db = prisma as unknown as AppDb;
 export class NotificationPersistentStorageRepository {
   findManyByUserId(userId: string): Promise<NotificationRecord[]> {
     return db.notification.findMany({
-      where: { userId, status: { not: 'ARCHIVED' } },
+      where: { userId, status: 'UNREAD' },
       orderBy: { createdAt: 'desc' },
     });
   }

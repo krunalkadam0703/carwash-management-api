@@ -48,6 +48,7 @@ export class ComplaintService {
       message: input.message,
     });
     await this.notifyOwner(businessId, complaint, user.role);
+    await this.notifyAgainstParty(complaint, user.id);
     return complaint;
   }
 
@@ -156,6 +157,23 @@ export class ComplaintService {
       actionUrl: '/complaints',
       metadata: { complaintId: complaint.id, dailyWashId: complaint.dailyWashId },
     })));
+  }
+
+  private async notifyAgainstParty(complaint: ComplaintRecord, createdById: string): Promise<void> {
+    const againstId = complaint.workerId && complaint.workerId !== createdById
+      ? complaint.workerId
+      : complaint.customerId !== createdById
+        ? complaint.customerId
+        : null;
+    if (!againstId) return;
+    await notificationService.create({
+      userId: againstId,
+      type: 'SYSTEM',
+      title: 'Complaint registered against you',
+      message: complaint.subject,
+      actionUrl: againstId === complaint.customerId ? '/customer/complaints' : '/worker/complaints',
+      metadata: { complaintId: complaint.id, dailyWashId: complaint.dailyWashId },
+    });
   }
 
   private dateKey(date: Date): string {

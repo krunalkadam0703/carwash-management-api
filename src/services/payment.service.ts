@@ -6,6 +6,7 @@ import type {
   StartSubscriptionPaymentResult,
 } from '../models/payment.model.js';
 import { paymentRepository } from '../repositories/payment/index.js';
+import { complaintRepository } from '../repositories/complaint/index.js';
 import { auditLogService } from './audit-log.service.js';
 import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/app-error.js';
@@ -68,6 +69,7 @@ export class PaymentService {
       actionUrl: `/customer/plans`,
       metadata: { paymentId: payment.id, subscriptionId },
     });
+    await this.notifyOwner(businessId, 'PAYMENT_PENDING', 'Payment started', 'A customer started a subscription payment.', payment.id, subscriptionId);
     return { payment, gateway };
   }
 
@@ -113,6 +115,7 @@ export class PaymentService {
       actionUrl: `/customer/plans`,
       metadata: { paymentId: completed.id, subscriptionId: completed.subscriptionId },
     });
+    await this.notifyOwner(completed.businessId, 'PAYMENT_SUCCESS', 'Payment completed', 'A customer completed payment. Activate the subscription.', completed.id, completed.subscriptionId);
     return completed;
   }
 
@@ -142,6 +145,7 @@ export class PaymentService {
       actionUrl: `/customer/plans`,
       metadata: { paymentId: failed.id, subscriptionId: failed.subscriptionId },
     });
+    await this.notifyOwner(failed.businessId, 'PAYMENT_FAILED', 'Payment failed', failureReason ?? 'A customer payment failed.', failed.id, failed.subscriptionId);
     return failed;
   }
 
@@ -228,6 +232,26 @@ export class PaymentService {
       .digest('hex');
     if (expected !== input.razorpaySignature)
       throw new AppError('Invalid Razorpay payment signature.', HttpStatus.BAD_REQUEST);
+  }
+
+  private async notifyOwner(
+    businessId: string,
+    type: 'PAYMENT_PENDING' | 'PAYMENT_SUCCESS' | 'PAYMENT_FAILED',
+    title: string,
+    message: string,
+    paymentId: string,
+    subscriptionId?: string | null,
+  ): Promise<void> {
+    const ownerId = await complaintRepository.findOwnerId(businessId);
+    if (!ownerId) return;
+    await notificationService.create({
+      userId: ownerId,
+      type,
+      title,
+      message,
+      actionUrl: '/payments',
+      metadata: { paymentId, subscriptionId },
+    });
   }
 }
 

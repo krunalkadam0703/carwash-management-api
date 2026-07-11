@@ -133,6 +133,14 @@ export class DailyWashService {
     if (row.status === 'COMPLETED')
       throw new AppError('Completed washes cannot be reassigned.', HttpStatus.CONFLICT);
     await redisService.set(workerKey(row.businessId, id), workerId, 60 * 60 * 36);
+    await notificationService.create({
+      userId: workerId,
+      type: 'VEHICLE_ASSIGNED',
+      title: 'Daily job assigned',
+      message: 'A daily wash has been assigned to you.',
+      actionUrl: '/worker/jobs',
+      metadata: { dailyWashId: id },
+    });
     return { ...row, temporaryWorkerId: workerId, assignedWorkerId: workerId };
   }
 
@@ -144,6 +152,15 @@ export class DailyWashService {
     if (row.status === 'COMPLETED')
       throw new AppError('Completed washes cannot be reordered.', HttpStatus.CONFLICT);
     await redisService.set(queueKey(row.businessId, id), String(queueOrder), 60 * 60 * 24 * 45);
+    const workerId = await this.assignedWorkerId(row);
+    if (workerId) await notificationService.create({
+      userId: workerId,
+      type: 'SYSTEM',
+      title: 'Work order changed',
+      message: 'Your daily work queue order was changed.',
+      actionUrl: '/worker/jobs',
+      metadata: { dailyWashId: id, queueOrder },
+    });
     return { ...row, queueOrder };
   }
 

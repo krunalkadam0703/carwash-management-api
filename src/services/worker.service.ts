@@ -8,6 +8,7 @@ import type {
 } from '../models/worker.model.js';
 import { workerRepository } from '../repositories/worker/index.js';
 import { auditLogService } from './audit-log.service.js';
+import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/app-error.js';
 
 const LIVE_STATUSES: WorkerLiveStatus[] = ['OFFLINE', 'AVAILABLE', 'BUSY', 'ON_BREAK'];
@@ -75,6 +76,14 @@ export class WorkerService {
       entityType: 'WorkerAssignment',
       entityId: assignment.id,
       newData: { workerId, vehicleId },
+    });
+    await notificationService.create({
+      userId: workerId,
+      type: 'VEHICLE_ASSIGNED',
+      title: 'New job assigned',
+      message: 'A vehicle has been assigned to you.',
+      actionUrl: '/worker/jobs',
+      metadata: { assignmentId: assignment.id, vehicleId },
     });
     return assignment;
   }

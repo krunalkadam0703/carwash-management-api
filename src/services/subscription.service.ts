@@ -2,6 +2,7 @@ import { HttpStatus } from '../constants/http.js';
 import type { AppUser } from '../models/auth.model.js';
 import type { SubscriptionRecord } from '../models/subscription.model.js';
 import { subscriptionRepository } from '../repositories/subscription/index.js';
+import { complaintRepository } from '../repositories/complaint/index.js';
 import { auditLogService } from './audit-log.service.js';
 import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/app-error.js';
@@ -41,7 +42,7 @@ export class SubscriptionService {
       throw new AppError('Suggested plan was not found.', HttpStatus.NOT_FOUND);
     }
 
-    return subscriptionRepository.create({
+    const subscription = await subscriptionRepository.create({
       businessId,
       customerId: user.id,
       vehicleId: input.vehicleId,
@@ -50,6 +51,14 @@ export class SubscriptionService {
       amount: Number(plan.price.toString()),
       autoRenew: input.autoRenew,
     });
+    await this.notifyOwner(businessId, {
+      type: 'SUBSCRIPTION_REQUEST',
+      title: 'New subscription request',
+      message: 'A customer requested a subscription approval.',
+      actionUrl: '/subscriptions',
+      metadata: { subscriptionId: subscription.id },
+    });
+    return subscription;
   }
 
   async approve(user: AppUser, id: string, remarks?: string): Promise<SubscriptionRecord> {
@@ -186,6 +195,15 @@ export class SubscriptionService {
     if (!user.businessId)
       throw new AppError('Business account is required.', HttpStatus.BAD_REQUEST);
     return user.businessId;
+  }
+
+  private async notifyOwner(
+    businessId: string,
+    input: { type: 'SUBSCRIPTION_REQUEST'; title: string; message: string; actionUrl: string; metadata: unknown },
+  ): Promise<void> {
+    const ownerId = await complaintRepository.findOwnerId(businessId);
+    if (!ownerId) return;
+    await notificationService.create({ userId: ownerId, ...input });
   }
 }
 
