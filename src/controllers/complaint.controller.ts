@@ -16,6 +16,7 @@ export class ComplaintController {
     const complaint = await complaintService.create(this.user(req), {
       subject: complaintService.text(req.body.subject, 'subject'),
       message: complaintService.text(req.body.message, 'message'),
+      dailyWashId: complaintService.text(req.body.dailyWashId, 'dailyWashId'),
     });
 
     ApiResponse.success(res, { complaint }, 'Complaint created.', HttpStatus.CREATED);
@@ -26,6 +27,7 @@ export class ComplaintController {
       this.user(req),
       complaintService.text(req.params.id, 'id'),
       complaintService.status(req.body.status),
+      complaintService.optText(req.body.conclusion),
     );
 
     ApiResponse.success(res, { complaint }, 'Complaint updated.');

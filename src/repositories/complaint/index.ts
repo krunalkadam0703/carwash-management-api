@@ -6,8 +6,8 @@ import type {
 import { complaintPersistentStorageRepository } from './persistent-storage.js';
 
 export class ComplaintRepository {
-  findManyByBusinessId(businessId: string, customerId?: string): Promise<ComplaintRecord[]> {
-    return complaintPersistentStorageRepository.findManyByBusinessId(businessId, customerId);
+  findManyByBusinessId(businessId: string, participantId?: string): Promise<ComplaintRecord[]> {
+    return complaintPersistentStorageRepository.findManyByBusinessId(businessId, participantId);
   }
 
   findById(businessId: string, id: string): Promise<ComplaintRecord | null> {
@@ -16,6 +16,14 @@ export class ComplaintRepository {
 
   create(input: CreateComplaintInput): Promise<ComplaintRecord> {
     return complaintPersistentStorageRepository.create(input);
+  }
+
+  findDailyWash(businessId: string, id: string) {
+    return complaintPersistentStorageRepository.findDailyWash(businessId, id);
+  }
+
+  findOwnerId(businessId: string): Promise<string | null> {
+    return complaintPersistentStorageRepository.findOwnerId(businessId);
   }
 
   updateStatus(input: UpdateComplaintInput): Promise<ComplaintRecord> {

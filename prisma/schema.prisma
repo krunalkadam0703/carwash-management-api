@@ -169,6 +169,8 @@ model User {
   dailyWashSchedules    DailyWashSchedule[]       @relation("CustomerDailyWashSchedules")
   subscriptionPauses    SubscriptionPause[]       @relation("CustomerSubscriptionPauses")
   complaints            Complaint[]               @relation("CustomerComplaints")
+  workerComplaints      Complaint[]               @relation("WorkerComplaints")
+  createdComplaints     Complaint[]               @relation("ComplaintCreators")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -632,6 +634,7 @@ model DailyWashSchedule {
   customer     User                @relation("CustomerDailyWashSchedules", fields: [customerId], references: [id])
   vehicle      Vehicle             @relation(fields: [vehicleId], references: [id])
   photos       DailyWashPhoto[]
+  complaints   Complaint[]
 
   @@unique([subscriptionId, washDate])
   @@index([businessId, washDate])
@@ -668,20 +671,31 @@ model SubscriptionPause {
 }
 
 model Complaint {
-  id         String          @id @default(uuid())
-  businessId String
-  customerId String
-  subject    String
-  message    String
-  status     ComplaintStatus @default(OPEN)
-  resolvedAt DateTime?
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
+  id            String          @id @default(uuid())
+  businessId    String
+  customerId    String
+  workerId      String?
+  createdById   String?
+  dailyWashId   String?
+  complaintDate DateTime        @default(now())
+  subject       String
+  message       String
+  conclusion    String?
+  status        ComplaintStatus @default(OPEN)
+  resolvedAt    DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
-  business Business @relation(fields: [businessId], references: [id])
-  customer User     @relation("CustomerComplaints", fields: [customerId], references: [id])
+  business  Business           @relation(fields: [businessId], references: [id])
+  customer  User               @relation("CustomerComplaints", fields: [customerId], references: [id])
+  worker    User?              @relation("WorkerComplaints", fields: [workerId], references: [id])
+  createdBy User?              @relation("ComplaintCreators", fields: [createdById], references: [id])
+  dailyWash DailyWashSchedule? @relation(fields: [dailyWashId], references: [id])
 
   @@index([businessId, status])
+  @@index([dailyWashId])
+  @@index([workerId])
+  @@index([complaintDate])
 }
 
 model RazorpayWebhookEvent {

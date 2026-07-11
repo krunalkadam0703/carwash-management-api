@@ -11,20 +11,60 @@ type ComplaintDelegate = {
   create(args: unknown): Promise<ComplaintRecord>;
   update(args: unknown): Promise<ComplaintRecord>;
 };
-type AppDb = { complaint: ComplaintDelegate };
+type DailyWashDelegate = {
+  findFirst(args: unknown): Promise<{
+    id: string;
+    businessId: string;
+    customerId: string;
+    vehicleId: string;
+    washDate: Date;
+  } | null>;
+};
+type BusinessDelegate = { findFirst(args: unknown): Promise<{ ownerId: string } | null> };
+type AppDb = {
+  complaint: ComplaintDelegate;
+  dailyWashSchedule: DailyWashDelegate;
+  business: BusinessDelegate;
+};
 
 const db = prisma as unknown as AppDb;
 
 export class ComplaintPersistentStorageRepository {
-  findManyByBusinessId(businessId: string, customerId?: string): Promise<ComplaintRecord[]> {
+  findManyByBusinessId(businessId: string, participantId?: string): Promise<ComplaintRecord[]> {
     return db.complaint.findMany({
-      where: { businessId, ...(customerId ? { customerId } : {}) },
+      where: {
+        businessId,
+        ...(participantId ? {
+          OR: [
+            { customerId: participantId },
+            { workerId: participantId },
+            { createdById: participantId },
+          ],
+        } : {}),
+      },
+      include: {
+        customer: { select: { id: true, name: true, email: true, phoneNumber: true } },
+        worker: { select: { id: true, name: true, email: true, phoneNumber: true } },
+        createdBy: { select: { id: true, name: true, email: true, phoneNumber: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
 
   findById(businessId: string, id: string): Promise<ComplaintRecord | null> {
     return db.complaint.findFirst({ where: { id, businessId } });
+  }
+
+  findDailyWash(businessId: string, id: string) {
+    return db.dailyWashSchedule.findFirst({
+      where: { id, businessId },
+      select: { id: true, businessId: true, customerId: true, vehicleId: true, washDate: true },
+    });
+  }
+
+  async findOwnerId(businessId: string): Promise<string | null> {
+    return (await db.business.findFirst({ where: { id: businessId }, select: { ownerId: true } }))
+      ?.ownerId ?? null;
   }
 
   create(input: CreateComplaintInput): Promise<ComplaintRecord> {
@@ -36,6 +76,7 @@ export class ComplaintPersistentStorageRepository {
       where: { id: input.id },
       data: {
         status: input.status,
+        conclusion: input.conclusion,
         resolvedAt: input.status === 'RESOLVED' ? new Date() : undefined,
       },
     });
