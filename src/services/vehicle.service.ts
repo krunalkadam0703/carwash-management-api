@@ -5,7 +5,9 @@ import type {
   UpdateVehicleInput,
   VehicleRecord,
 } from '../models/vehicle.model.js';
+import { complaintRepository } from '../repositories/complaint/index.js';
 import { vehicleRepository } from '../repositories/vehicle/index.js';
+import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/app-error.js';
 
 type CreateBody = Omit<CreateVehicleInput, 'businessId' | 'customerId'> & { customerId?: string };
@@ -32,6 +34,8 @@ export class VehicleService {
       user.role === 'CUSTOMER' ? user.id : this.text(input.customerId, 'customerId');
     await this.ensureCustomer(businessId, customerId);
     await this.ensureVehicleType(businessId, input.vehicleTypeId);
+    if (!input.location) throw new AppError('Vehicle address and GPS are required.', HttpStatus.BAD_REQUEST);
+    await this.ensureVehicleNumberAvailable(businessId, input.vehicleNumber);
     return vehicleRepository.create({ ...input, businessId, customerId });
   }
 
@@ -39,10 +43,17 @@ export class VehicleService {
     const businessId = this.requireBusinessId(user);
     const vehicle = await this.requireVehicle(businessId, id);
     this.ensureCanAccess(user, vehicle);
+    if (user.role === 'CUSTOMER' && input.vehicleNumber && input.vehicleNumber !== vehicle.vehicleNumber)
+      throw new AppError('Vehicle number cannot be changed.', HttpStatus.FORBIDDEN);
     if (input.customerId) this.requireOwner(user);
     if (input.customerId) await this.ensureCustomer(businessId, input.customerId);
     if (input.vehicleTypeId) await this.ensureVehicleType(businessId, input.vehicleTypeId);
-    return vehicleRepository.update({ ...input, id, businessId }, vehicle.customerId);
+    if (input.vehicleNumber)
+      await this.ensureVehicleNumberAvailable(businessId, input.vehicleNumber, id);
+    const updated = await vehicleRepository.update({ ...input, id, businessId }, vehicle.customerId);
+    if (input.availableTimeSlot && input.availableTimeSlot !== vehicle.availableTimeSlot)
+      await this.notifyOwnerTimeChanged(businessId, updated);
+    return updated;
   }
 
   text(value: unknown, field: string): string {
@@ -75,6 +86,16 @@ export class VehicleService {
       throw new AppError('Vehicle type was not found.', HttpStatus.NOT_FOUND);
   }
 
+  private async ensureVehicleNumberAvailable(
+    businessId: string,
+    vehicleNumber: string,
+    currentVehicleId?: string,
+  ): Promise<void> {
+    const existing = await vehicleRepository.findByVehicleNumber(businessId, vehicleNumber);
+    if (existing && existing.id !== currentVehicleId)
+      throw new AppError('Vehicle number is already registered.', HttpStatus.CONFLICT);
+  }
+
   private ensureCanAccess(user: AppUser, vehicle: VehicleRecord): void {
     if (user.role === 'CUSTOMER' && vehicle.customerId !== user.id)
       throw new AppError('Vehicle was not found.', HttpStatus.NOT_FOUND);
@@ -89,6 +110,19 @@ export class VehicleService {
     if (!user.businessId)
       throw new AppError('Business account is required.', HttpStatus.BAD_REQUEST);
     return user.businessId;
+  }
+
+  private async notifyOwnerTimeChanged(businessId: string, vehicle: VehicleRecord): Promise<void> {
+    const ownerId = await complaintRepository.findOwnerId(businessId);
+    if (!ownerId) return;
+    await notificationService.create({
+      userId: ownerId,
+      type: 'SYSTEM',
+      title: 'Vehicle availability changed',
+      message: `${vehicle.vehicleNumber} availability changed to ${vehicle.availableTimeSlot}.`,
+      actionUrl: '/vehicles',
+      metadata: { vehicleId: vehicle.id },
+    });
   }
 }
 

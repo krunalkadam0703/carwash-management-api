@@ -29,6 +29,13 @@ export class VehiclePersistentStorageRepository {
     return db.vehicle.findFirst({ where: { id, businessId } });
   }
 
+  findByVehicleNumber(
+    businessId: string,
+    vehicleNumber: string,
+  ): Promise<VehicleRecord | null> {
+    return db.vehicle.findFirst({ where: { businessId, vehicleNumber } });
+  }
+
   async existsCustomerForBusiness(businessId: string, customerId: string): Promise<boolean> {
     return Boolean(
       await db.user.findFirst({

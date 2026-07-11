@@ -23,6 +23,13 @@ export class VehicleRepository {
     return vehiclePersistentStorageRepository.findById(businessId, id);
   }
 
+  findByVehicleNumber(
+    businessId: string,
+    vehicleNumber: string,
+  ): Promise<VehicleRecord | null> {
+    return vehiclePersistentStorageRepository.findByVehicleNumber(businessId, vehicleNumber);
+  }
+
   existsCustomerForBusiness(businessId: string, customerId: string): Promise<boolean> {
     return vehiclePersistentStorageRepository.existsCustomerForBusiness(businessId, customerId);
   }
