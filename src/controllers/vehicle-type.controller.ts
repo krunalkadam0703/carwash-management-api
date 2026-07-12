@@ -15,7 +15,6 @@ export class VehicleTypeController {
   create = async (req: Request, res: Response): Promise<void> => {
     const vehicleType = await vehicleTypeService.create(this.getSessionUser(req), {
       name: vehicleTypeService.parseRequiredText(req.body.name, 'name'),
-      slug: vehicleTypeService.parseOptionalText(req.body.slug),
       examples: vehicleTypeService.parseOptionalText(req.body.examples),
       icon: vehicleTypeService.parseOptionalText(req.body.icon),
       sortOrder: vehicleTypeService.parseOptionalNumber(req.body.sortOrder),
@@ -31,7 +30,6 @@ export class VehicleTypeController {
       vehicleTypeService.parseRequiredText(req.params.id, 'id'),
       {
         name: vehicleTypeService.parseOptionalText(req.body.name),
-        slug: vehicleTypeService.parseOptionalText(req.body.slug),
         examples: vehicleTypeService.parseOptionalText(req.body.examples),
         icon: vehicleTypeService.parseOptionalText(req.body.icon),
         sortOrder: vehicleTypeService.parseOptionalNumber(req.body.sortOrder),

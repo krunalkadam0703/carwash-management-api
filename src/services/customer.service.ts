@@ -22,7 +22,12 @@ export class CustomerService {
       customer.role !== 'CUSTOMER'
     )
       throw new AppError('Customer was not found.', HttpStatus.NOT_FOUND);
-    return userRepository.updateProfile({ userId: id, ...input });
+    return userRepository.updateProfile({
+      userId: id,
+      ...input,
+      phoneNumber: input.phoneNumber ? this.phone(input.phoneNumber) : input.phoneNumber,
+      address: input.address ? this.address(input.address) : input.address,
+    });
   }
 
   text(value: unknown, field: string): string {
@@ -37,6 +42,20 @@ export class CustomerService {
 
   nullableText(value: unknown): string | null | undefined {
     return value === null ? null : this.optText(value);
+  }
+
+  private phone(value: string): string {
+    const phone = value.replace(/\s|-/g, '');
+    if (!/^(?:\+91)?[6-9]\d{9}$/.test(phone))
+      throw new AppError('phoneNumber must be a valid Indian mobile number.', HttpStatus.BAD_REQUEST);
+    return phone;
+  }
+
+  private address(value: string): string {
+    const address = value.trim();
+    if (!/(^|\D)[1-9]\d{5}(\D|$)/.test(address))
+      throw new AppError('address must include a valid 6 digit pincode.', HttpStatus.BAD_REQUEST);
+    return address;
   }
 
   private requireOwner(user: AppUser): void {

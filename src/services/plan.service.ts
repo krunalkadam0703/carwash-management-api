@@ -23,15 +23,23 @@ export class PlanService {
     const businessId = this.requireBusinessId(user);
     await this.ensureVehicleType(businessId, input.vehicleTypeId);
     await this.ensureServices(businessId, input.serviceIds);
+    await this.ensureUniquePlan(businessId, input.vehicleTypeId, input.name, input.durationDays);
     return planRepository.create({ ...input, businessId });
   }
 
   async update(user: AppUser, id: string, input: UpdateBody): Promise<PlanRecord> {
     this.requireOwner(user);
     const businessId = this.requireBusinessId(user);
-    await this.getById(user, id);
+    const current = await this.getById(user, id);
     if (input.vehicleTypeId) await this.ensureVehicleType(businessId, input.vehicleTypeId);
     await this.ensureServices(businessId, input.serviceIds);
+    await this.ensureUniquePlan(
+      businessId,
+      input.vehicleTypeId ?? current.vehicleTypeId,
+      input.name ?? current.name,
+      input.durationDays ?? current.durationDays,
+      id,
+    );
     return planRepository.update({ ...input, id, businessId });
   }
 
@@ -101,6 +109,28 @@ export class PlanService {
         HttpStatus.NOT_FOUND,
       );
     }
+  }
+
+  private async ensureUniquePlan(
+    businessId: string,
+    vehicleTypeId: string,
+    name: string,
+    durationDays: number,
+    currentId?: string,
+  ): Promise<void> {
+    const normalizedName = name.trim().toLowerCase();
+    const duplicate = (await planRepository.findManyByBusinessId(businessId)).find(
+      (plan) =>
+        plan.id !== currentId &&
+        plan.vehicleTypeId === vehicleTypeId &&
+        plan.name.trim().toLowerCase() === normalizedName &&
+        plan.durationDays === durationDays,
+    );
+    if (duplicate)
+      throw new AppError(
+        'Plan name, vehicle type, and duration must be unique.',
+        HttpStatus.CONFLICT,
+      );
   }
 
   private requireOwner(user: AppUser): void {

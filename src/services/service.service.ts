@@ -44,6 +44,7 @@ export class ServiceService {
 
     const businessId = this.requireBusinessId(user);
     await this.ensureVehicleTypeBelongsToBusiness(businessId, input.vehicleTypeId);
+    await this.ensureUniqueService(businessId, input.vehicleTypeId, input.name, input.durationMinutes);
 
     return this.repository.create({
       ...input,
@@ -63,6 +64,14 @@ export class ServiceService {
     if (input.vehicleTypeId) {
       await this.ensureVehicleTypeBelongsToBusiness(businessId, input.vehicleTypeId);
     }
+    const current = await this.getById(user, id);
+    await this.ensureUniqueService(
+      businessId,
+      input.vehicleTypeId ?? current.vehicleTypeId,
+      input.name ?? current.name,
+      input.durationMinutes ?? current.durationMinutes,
+      id,
+    );
 
     return this.repository.update({
       ...input,
@@ -149,6 +158,28 @@ export class ServiceService {
     if (!exists) {
       throw new AppError('Vehicle type was not found for this business.', HttpStatus.NOT_FOUND);
     }
+  }
+
+  private async ensureUniqueService(
+    businessId: string,
+    vehicleTypeId: string,
+    name: string,
+    durationMinutes = 45,
+    currentId?: string,
+  ): Promise<void> {
+    const normalizedName = name.trim().toLowerCase();
+    const duplicate = (await this.repository.findManyByBusinessId(businessId)).find(
+      (service) =>
+        service.id !== currentId &&
+        service.vehicleTypeId === vehicleTypeId &&
+        service.name.trim().toLowerCase() === normalizedName &&
+        service.durationMinutes === durationMinutes,
+    );
+    if (duplicate)
+      throw new AppError(
+        'Service name, vehicle type, and duration must be unique.',
+        HttpStatus.CONFLICT,
+      );
   }
 
   private requireOwner(user: AppUser): void {

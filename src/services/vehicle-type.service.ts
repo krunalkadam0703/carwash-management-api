@@ -15,11 +15,11 @@ export class VehicleTypeService {
 
   async create(
     user: AppUser,
-    input: Omit<CreateVehicleTypeInput, 'businessId' | 'slug'> & { slug?: string },
+    input: Omit<CreateVehicleTypeInput, 'businessId' | 'slug'>,
   ): Promise<VehicleTypeRecord> {
     this.requireOwner(user);
     const businessId = this.requireBusinessId(user);
-    const slug = input.slug ?? this.slugify(input.name);
+    const slug = this.slugify(input.name);
     await this.ensureSlugAvailable(businessId, slug);
 
     return vehicleTypeRepository.create({ ...input, businessId, slug });
@@ -33,16 +33,10 @@ export class VehicleTypeService {
     this.requireOwner(user);
     const businessId = this.requireBusinessId(user);
     await this.requireExisting(businessId, id);
+    const nextSlug = input.name ? this.slugify(input.name) : undefined;
+    if (nextSlug) await this.ensureSlugAvailable(businessId, nextSlug, id);
 
-    if (input.slug) {
-      const existing = await vehicleTypeRepository.findBySlug(businessId, input.slug);
-
-      if (existing && existing.id !== id) {
-        throw new AppError('Vehicle type slug already exists.', HttpStatus.CONFLICT);
-      }
-    }
-
-    return vehicleTypeRepository.update({ ...input, id, businessId });
+    return vehicleTypeRepository.update({ ...input, slug: nextSlug, id, businessId });
   }
 
   parseRequiredText(value: unknown, fieldName: string): string {
@@ -73,8 +67,13 @@ export class VehicleTypeService {
       throw new AppError('Vehicle type was not found.', HttpStatus.NOT_FOUND);
   }
 
-  private async ensureSlugAvailable(businessId: string, slug: string): Promise<void> {
-    if (await vehicleTypeRepository.findBySlug(businessId, slug))
+  private async ensureSlugAvailable(
+    businessId: string,
+    slug: string,
+    currentId?: string,
+  ): Promise<void> {
+    const existing = await vehicleTypeRepository.findBySlug(businessId, slug);
+    if (existing && existing.id !== currentId)
       throw new AppError('Vehicle type slug already exists.', HttpStatus.CONFLICT);
   }
 

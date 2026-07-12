@@ -142,7 +142,7 @@ export class AuthService implements AuthServiceContract {
       );
     }
 
-    const email = input.email.toLowerCase();
+    const email = this.email(input.email);
     const existingUser = await this.dependencies.userRepository.findByEmail(email);
 
     if (existingUser) {
@@ -153,8 +153,8 @@ export class AuthService implements AuthServiceContract {
       businessId: business.id,
       name: input.name,
       email,
-      phoneNumber: input.phoneNumber,
-      address: input.address,
+      phoneNumber: input.phoneNumber ? this.phone(input.phoneNumber) : undefined,
+      address: input.address ? this.address(input.address) : undefined,
     });
   }
 
@@ -173,7 +173,11 @@ export class AuthService implements AuthServiceContract {
       throw new AppError('This owner already has a business account.', HttpStatus.CONFLICT);
     }
 
-    return this.dependencies.businessRepository.createOwnerBusiness(input);
+    return this.dependencies.businessRepository.createOwnerBusiness({
+      ...input,
+      phoneNumber: this.phone(input.phoneNumber),
+      address: this.address(input.address),
+    });
   }
 
   async onboardCustomer(input: {
@@ -200,10 +204,31 @@ export class AuthService implements AuthServiceContract {
       );
     return this.dependencies.userRepository.updateCustomerProfile({
       userId: input.user.id,
-      phoneNumber: input.phoneNumber,
-      address: input.address,
+      phoneNumber: this.phone(input.phoneNumber),
+      address: this.address(input.address),
       businessId,
     });
+  }
+
+  private email(value: string): string {
+    const email = value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      throw new AppError('email is invalid.', HttpStatus.BAD_REQUEST);
+    return email;
+  }
+
+  private phone(value: string): string {
+    const phone = value.replace(/\s|-/g, '');
+    if (!/^(?:\+91)?[6-9]\d{9}$/.test(phone))
+      throw new AppError('phoneNumber must be a valid Indian mobile number.', HttpStatus.BAD_REQUEST);
+    return phone;
+  }
+
+  private address(value: string): string {
+    const address = value.trim();
+    if (!/(^|\D)[1-9]\d{5}(\D|$)/.test(address))
+      throw new AppError('address must include a valid 6 digit pincode.', HttpStatus.BAD_REQUEST);
+    return address;
   }
 
   private isOnboardingComplete(user: AppUser): boolean {
