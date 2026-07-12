@@ -45,7 +45,7 @@ export class VehiclePersistentStorageRepository {
   ): Promise<PaginatedResult<VehicleRecord>> {
     const assignmentVehicleIds = input.assignment && input.assignment !== 'all'
       ? (await db.workerAssignment.findMany({
-        where: { businessId, status: { not: 'COMPLETED' } },
+        where: { status: { not: 'COMPLETED' }, vehicle: { businessId } },
         select: { vehicleId: true },
       })).map(row => row.vehicleId)
       : undefined;
