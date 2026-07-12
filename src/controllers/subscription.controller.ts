@@ -5,9 +5,16 @@ import type { AuthenticatedUser } from '../models/auth.model.js';
 import { subscriptionService } from '../services/subscription.service.js';
 import { ApiResponse } from '../utils/api-response.js';
 import { AppError } from '../utils/app-error.js';
+import { parsePagination } from '../utils/pagination.js';
 
 export class SubscriptionController {
   list = async (req: Request, res: Response): Promise<void> => {
+    const pagination = parsePagination(req.query);
+    if (pagination) {
+      const result = await subscriptionService.listPage(this.user(req), pagination);
+      ApiResponse.success(res, { subscriptions: result.items, pagination: result.pagination }, 'Subscriptions loaded.');
+      return;
+    }
     const subscriptions = await subscriptionService.list(this.user(req));
     ApiResponse.success(res, { subscriptions }, 'Subscriptions loaded.');
   };

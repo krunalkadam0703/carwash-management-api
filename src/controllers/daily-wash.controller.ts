@@ -5,17 +5,26 @@ import { dailyWashService } from '../services/daily-wash.service.js';
 import { ApiResponse } from '../utils/api-response.js';
 import { AppError } from '../utils/app-error.js';
 import { HttpStatus } from '../constants/http.js';
+import { parsePagination } from '../utils/pagination.js';
 
 export class DailyWashController {
   list = async (req: Request, res: Response): Promise<void> => {
+    const pagination = parsePagination(req.query);
+    const from = req.query.from
+      ? dailyWashService.date(req.query.from)
+      : req.query.date
+        ? dailyWashService.date(req.query.date)
+        : undefined;
+    const to = req.query.to ? dailyWashService.date(req.query.to) : undefined;
+    if (pagination) {
+      const result = await dailyWashService.listPage(this.user(req), pagination, from, to);
+      ApiResponse.success(res, { dailyWashes: result.items, pagination: result.pagination }, 'Daily washes loaded.');
+      return;
+    }
     const dailyWashes = await dailyWashService.list(
       this.user(req),
-      req.query.from
-        ? dailyWashService.date(req.query.from)
-        : req.query.date
-          ? dailyWashService.date(req.query.date)
-          : undefined,
-      req.query.to ? dailyWashService.date(req.query.to) : undefined,
+      from,
+      to,
     );
     ApiResponse.success(res, { dailyWashes }, 'Daily washes loaded.');
   };

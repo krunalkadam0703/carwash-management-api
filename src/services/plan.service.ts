@@ -3,6 +3,7 @@ import type { AppUser } from '../models/auth.model.js';
 import type { CreatePlanInput, PlanRecord, UpdatePlanInput } from '../models/plan.model.js';
 import { planRepository } from '../repositories/plan/index.js';
 import { AppError } from '../utils/app-error.js';
+import type { PaginationInput, PaginatedResult } from '../utils/pagination.js';
 
 type CreateBody = Omit<CreatePlanInput, 'businessId'>;
 type UpdateBody = Omit<UpdatePlanInput, 'id' | 'businessId'>;
@@ -10,6 +11,10 @@ type UpdateBody = Omit<UpdatePlanInput, 'id' | 'businessId'>;
 export class PlanService {
   async list(user: AppUser, activeOnly = false): Promise<PlanRecord[]> {
     return planRepository.findManyByBusinessId(this.requireBusinessId(user), activeOnly);
+  }
+
+  async listPage(user: AppUser, input: PaginationInput): Promise<PaginatedResult<PlanRecord>> {
+    return planRepository.findPageByBusinessId(this.requireBusinessId(user), input);
   }
 
   async getById(user: AppUser, id: string): Promise<PlanRecord> {

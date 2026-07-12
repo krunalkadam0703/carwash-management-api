@@ -7,6 +7,7 @@ import type {
   FailWebhookPaymentInput,
   PaymentRecord,
 } from '../../models/payment.model.js';
+import type { PaginationInput, PaginatedResult } from '../../utils/pagination.js';
 import { subscriptionCacheRepository } from '../subscription/cache.js';
 import { paymentPersistentStorageRepository } from './persistent-storage.js';
 
@@ -18,6 +19,20 @@ export class PaymentRepository {
   ): Promise<PaymentRecord[]> {
     return paymentPersistentStorageRepository.findManyByBusinessId(
       businessId,
+      customerId,
+      subscriptionId,
+    );
+  }
+
+  findPageByBusinessId(
+    businessId: string,
+    input: PaginationInput,
+    customerId?: string,
+    subscriptionId?: string,
+  ): Promise<PaginatedResult<PaymentRecord>> {
+    return paymentPersistentStorageRepository.findPageByBusinessId(
+      businessId,
+      input,
       customerId,
       subscriptionId,
     );

@@ -1,4 +1,5 @@
 import type { CreatePlanInput, PlanRecord, UpdatePlanInput } from '../../models/plan.model.js';
+import type { PaginationInput, PaginatedResult } from '../../utils/pagination.js';
 import { planCacheRepository } from './cache.js';
 import { planPersistentStorageRepository } from './persistent-storage.js';
 
@@ -13,6 +14,13 @@ export class PlanRepository {
     );
     await planCacheRepository.saveMany(businessId, plans, activeOnly);
     return plans;
+  }
+
+  findPageByBusinessId(
+    businessId: string,
+    input: PaginationInput,
+  ): Promise<PaginatedResult<PlanRecord>> {
+    return planPersistentStorageRepository.findPageByBusinessId(businessId, input);
   }
 
   findById(businessId: string, id: string): Promise<PlanRecord | null> {

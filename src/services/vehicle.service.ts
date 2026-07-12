@@ -9,6 +9,7 @@ import { complaintRepository } from '../repositories/complaint/index.js';
 import { vehicleRepository } from '../repositories/vehicle/index.js';
 import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/app-error.js';
+import type { PaginationInput, PaginatedResult } from '../utils/pagination.js';
 
 type CreateBody = Omit<CreateVehicleInput, 'businessId' | 'customerId'> & { customerId?: string };
 type UpdateBody = Omit<UpdateVehicleInput, 'id' | 'businessId'>;
@@ -37,6 +38,15 @@ export class VehicleService {
     if (!input.location) throw new AppError('Vehicle address and GPS are required.', HttpStatus.BAD_REQUEST);
     await this.ensureVehicleNumberAvailable(businessId, input.vehicleNumber);
     return vehicleRepository.create({ ...input, businessId, customerId });
+  }
+
+  async listPage(user: AppUser, input: PaginationInput): Promise<PaginatedResult<VehicleRecord>> {
+    const businessId = this.requireBusinessId(user);
+    return vehicleRepository.findPageByBusinessId(
+      businessId,
+      input,
+      user.role === 'CUSTOMER' ? user.id : undefined,
+    );
   }
 
   async update(user: AppUser, id: string, input: UpdateBody): Promise<VehicleRecord> {

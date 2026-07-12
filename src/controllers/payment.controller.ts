@@ -5,9 +5,20 @@ import type { AuthenticatedUser } from '../models/auth.model.js';
 import { paymentService } from '../services/payment.service.js';
 import { ApiResponse } from '../utils/api-response.js';
 import { AppError } from '../utils/app-error.js';
+import { parsePagination } from '../utils/pagination.js';
 
 export class PaymentController {
   list = async (req: Request, res: Response): Promise<void> => {
+    const pagination = parsePagination(req.query);
+    if (pagination) {
+      const result = await paymentService.listPage(
+        this.user(req),
+        pagination,
+        paymentService.optText(req.query.subscriptionId),
+      );
+      ApiResponse.success(res, { payments: result.items, pagination: result.pagination }, 'Payments loaded.');
+      return;
+    }
     const payments = await paymentService.list(
       this.user(req),
       paymentService.optText(req.query.subscriptionId),

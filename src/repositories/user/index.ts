@@ -1,4 +1,5 @@
 import type { AppRole, AppUser } from '../../models/auth.model.js';
+import type { PaginationInput, PaginatedResult } from '../../utils/pagination.js';
 import { userCacheRepository } from './cache.js';
 import { userPersistentStorageRepository } from './persistent-storage.js';
 
@@ -25,6 +26,14 @@ export class UserRepository {
 
   findManyByBusinessAndRole(businessId: string, role: AppRole): Promise<AppUser[]> {
     return userPersistentStorageRepository.findManyByBusinessAndRole(businessId, role);
+  }
+
+  findPageByBusinessAndRole(
+    businessId: string,
+    role: AppRole,
+    input: PaginationInput,
+  ): Promise<PaginatedResult<AppUser>> {
+    return userPersistentStorageRepository.findPageByBusinessAndRole(businessId, role, input);
   }
 
   async createInactiveWorker(input: {

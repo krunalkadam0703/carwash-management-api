@@ -7,9 +7,11 @@ import type {
 } from '../models/service.model.js';
 import { serviceRepository } from '../repositories/service/index.js';
 import { AppError } from '../utils/app-error.js';
+import type { PaginationInput, PaginatedResult } from '../utils/pagination.js';
 
 export interface ServiceRepositoryPort {
   findManyByBusinessId(businessId: string): Promise<ServiceRecord[]>;
+  findPageByBusinessId(businessId: string, input: PaginationInput): Promise<PaginatedResult<ServiceRecord>>;
   findById(businessId: string, id: string): Promise<ServiceRecord | null>;
   create(input: CreateServiceInput): Promise<ServiceRecord>;
   update(input: UpdateServiceInput): Promise<ServiceRecord>;
@@ -158,6 +160,10 @@ export class ServiceService {
     if (!exists) {
       throw new AppError('Vehicle type was not found for this business.', HttpStatus.NOT_FOUND);
     }
+  }
+
+  async listPage(user: AppUser, input: PaginationInput): Promise<PaginatedResult<ServiceRecord>> {
+    return this.repository.findPageByBusinessId(this.requireBusinessId(user), input);
   }
 
   private async ensureUniqueService(

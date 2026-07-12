@@ -5,9 +5,16 @@ import type { AuthenticatedUser } from '../models/auth.model.js';
 import { complaintService } from '../services/complaint.service.js';
 import { ApiResponse } from '../utils/api-response.js';
 import { AppError } from '../utils/app-error.js';
+import { parsePagination } from '../utils/pagination.js';
 
 export class ComplaintController {
   list = async (req: Request, res: Response): Promise<void> => {
+    const pagination = parsePagination(req.query);
+    if (pagination) {
+      const result = await complaintService.listPage(this.user(req), pagination);
+      ApiResponse.success(res, { complaints: result.items, pagination: result.pagination }, 'Complaints loaded.');
+      return;
+    }
     const complaints = await complaintService.list(this.user(req));
     ApiResponse.success(res, { complaints }, 'Complaints loaded.');
   };

@@ -2,10 +2,13 @@ import { randomUUID } from 'crypto';
 
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
 import type { AppRole, AppUser } from '../../models/auth.model.js';
+import type { PaginationInput, PaginatedResult } from '../../utils/pagination.js';
+import { paginated, skip } from '../../utils/pagination.js';
 
 type UserDelegate = {
   findUnique(args: unknown): Promise<AppUser | null>;
   findMany(args: unknown): Promise<AppUser[]>;
+  count(args: unknown): Promise<number>;
   create(args: unknown): Promise<AppUser>;
   update(args: unknown): Promise<AppUser>;
 };
@@ -27,6 +30,37 @@ export class UserPersistentStorageRepository {
 
   findManyByBusinessAndRole(businessId: string, role: AppRole): Promise<AppUser[]> {
     return db.user.findMany({ where: { businessId, role }, orderBy: { createdAt: 'desc' } });
+  }
+
+  async findPageByBusinessAndRole(
+    businessId: string,
+    role: AppRole,
+    input: PaginationInput,
+  ): Promise<PaginatedResult<AppUser>> {
+    const where = {
+      businessId,
+      role,
+      ...(input.status === 'active' ? { isActive: true } : {}),
+      ...(input.status === 'inactive' ? { isActive: false } : {}),
+      ...(input.search ? {
+        OR: [
+          { name: { contains: input.search, mode: 'insensitive' } },
+          { email: { contains: input.search, mode: 'insensitive' } },
+          { phoneNumber: { contains: input.search } },
+          { address: { contains: input.search, mode: 'insensitive' } },
+        ],
+      } : {}),
+    };
+    const [total, rows] = await Promise.all([
+      db.user.count({ where }),
+      db.user.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: skip(input),
+        take: input.pageSize,
+      }),
+    ]);
+    return paginated(rows, total, input);
   }
 
   createInactiveWorker(input: {

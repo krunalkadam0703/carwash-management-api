@@ -4,6 +4,8 @@ import type {
   ServiceRecord,
   UpdateServiceInput,
 } from '../../models/service.model.js';
+import type { PaginationInput, PaginatedResult } from '../../utils/pagination.js';
+import { paginated, skip } from '../../utils/pagination.js';
 
 type PrismaServiceRecord = Omit<ServiceRecord, 'basePrice'> & {
   basePrice: { toString(): string };
@@ -12,6 +14,7 @@ type PrismaServiceRecord = Omit<ServiceRecord, 'basePrice'> & {
 type ServiceDelegate = {
   findMany(args: unknown): Promise<PrismaServiceRecord[]>;
   findFirst(args: unknown): Promise<PrismaServiceRecord | null>;
+  count(args: unknown): Promise<number>;
   create(args: unknown): Promise<PrismaServiceRecord>;
   update(args: unknown): Promise<PrismaServiceRecord>;
   delete(args: unknown): Promise<PrismaServiceRecord>;
@@ -41,6 +44,29 @@ export class ServicePersistentStorageRepository {
     });
 
     return services.map(mapService);
+  }
+
+  async findPageByBusinessId(
+    businessId: string,
+    input: PaginationInput,
+  ): Promise<PaginatedResult<ServiceRecord>> {
+    const where = {
+      businessId,
+      ...(input.vehicleTypeId ? { vehicleTypeId: input.vehicleTypeId } : {}),
+      ...(input.status === 'active' ? { isActive: true } : {}),
+      ...(input.status === 'inactive' ? { isActive: false } : {}),
+      ...(input.search ? {
+        OR: [
+          { name: { contains: input.search, mode: 'insensitive' } },
+          { description: { contains: input.search, mode: 'insensitive' } },
+        ],
+      } : {}),
+    };
+    const [total, services] = await Promise.all([
+      db.service.count({ where }),
+      db.service.findMany({ where, orderBy: { createdAt: 'desc' }, skip: skip(input), take: input.pageSize }),
+    ]);
+    return paginated(services.map(mapService), total, input);
   }
 
   async findById(businessId: string, id: string): Promise<ServiceRecord | null> {

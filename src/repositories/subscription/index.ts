@@ -3,6 +3,7 @@ import type {
   SubscriptionRecord,
   UpdateSubscriptionStatusInput,
 } from '../../models/subscription.model.js';
+import type { PaginationInput, PaginatedResult } from '../../utils/pagination.js';
 import { subscriptionCacheRepository } from './cache.js';
 import { subscriptionPersistentStorageRepository } from './persistent-storage.js';
 
@@ -20,6 +21,18 @@ export class SubscriptionRepository {
     );
     await subscriptionCacheRepository.saveMany(businessId, rows, customerId);
     return rows;
+  }
+
+  findPageByBusinessId(
+    businessId: string,
+    input: PaginationInput,
+    customerId?: string,
+  ): Promise<PaginatedResult<SubscriptionRecord>> {
+    return subscriptionPersistentStorageRepository.findPageByBusinessId(
+      businessId,
+      input,
+      customerId,
+    );
   }
 
   findById(businessId: string, id: string): Promise<SubscriptionRecord | null> {

@@ -3,6 +3,7 @@ import type {
   UpdateVehicleInput,
   VehicleRecord,
 } from '../../models/vehicle.model.js';
+import type { PaginationInput, PaginatedResult } from '../../utils/pagination.js';
 import { vehicleCacheRepository } from './cache.js';
 import { vehiclePersistentStorageRepository } from './persistent-storage.js';
 
@@ -21,6 +22,14 @@ export class VehicleRepository {
 
   findById(businessId: string, id: string): Promise<VehicleRecord | null> {
     return vehiclePersistentStorageRepository.findById(businessId, id);
+  }
+
+  findPageByBusinessId(
+    businessId: string,
+    input: PaginationInput,
+    customerId?: string,
+  ): Promise<PaginatedResult<VehicleRecord>> {
+    return vehiclePersistentStorageRepository.findPageByBusinessId(businessId, input, customerId);
   }
 
   findByVehicleNumber(

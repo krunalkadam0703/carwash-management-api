@@ -7,6 +7,7 @@ import { redisService } from '../infrastructure/redis/index.js';
 import { auditLogService } from './audit-log.service.js';
 import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/app-error.js';
+import type { PaginationInput, PaginatedResult } from '../utils/pagination.js';
 
 const STATUSES: ComplaintStatus[] = ['OPEN', 'IN_REVIEW', 'RESOLVED', 'CLOSED'];
 const workerKey = (businessId: string, dailyWashId: string): string =>
@@ -18,6 +19,15 @@ export class ComplaintService {
     return complaintRepository.findManyByBusinessId(
       businessId,
       ['CUSTOMER', 'WORKER'].includes(user.role) ? user.id : undefined,
+    );
+  }
+
+  async listPage(user: AppUser, input: PaginationInput): Promise<PaginatedResult<ComplaintRecord>> {
+    const businessId = this.requireBusinessId(user);
+    return complaintRepository.findPageByBusinessId(
+      businessId,
+      input,
+      user.role === 'OWNER' ? undefined : user.id,
     );
   }
 

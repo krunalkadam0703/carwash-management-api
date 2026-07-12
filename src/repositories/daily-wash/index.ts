@@ -1,4 +1,5 @@
 import type { DailyWashRecord, UpdateDailyWashInput } from '../../models/daily-wash.model.js';
+import type { PaginationInput, PaginatedResult } from '../../utils/pagination.js';
 import { dailyWashPersistentStorageRepository } from './persistent-storage.js';
 
 export class DailyWashRepository {
@@ -10,6 +11,22 @@ export class DailyWashRepository {
   ): Promise<DailyWashRecord[]> {
     return dailyWashPersistentStorageRepository.findManyByBusinessId(
       businessId,
+      date,
+      endDate,
+      customerId,
+    );
+  }
+
+  findPageByBusinessId(
+    businessId: string,
+    input: PaginationInput,
+    date?: Date,
+    endDate?: Date,
+    customerId?: string,
+  ): Promise<PaginatedResult<DailyWashRecord>> {
+    return dailyWashPersistentStorageRepository.findPageByBusinessId(
+      businessId,
+      input,
       date,
       endDate,
       customerId,

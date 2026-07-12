@@ -3,11 +3,24 @@ import type {
   CreateComplaintInput,
   UpdateComplaintInput,
 } from '../../models/complaint.model.js';
+import type { PaginationInput, PaginatedResult } from '../../utils/pagination.js';
 import { complaintPersistentStorageRepository } from './persistent-storage.js';
 
 export class ComplaintRepository {
   findManyByBusinessId(businessId: string, participantId?: string): Promise<ComplaintRecord[]> {
     return complaintPersistentStorageRepository.findManyByBusinessId(businessId, participantId);
+  }
+
+  findPageByBusinessId(
+    businessId: string,
+    input: PaginationInput,
+    participantId?: string,
+  ): Promise<PaginatedResult<ComplaintRecord>> {
+    return complaintPersistentStorageRepository.findPageByBusinessId(
+      businessId,
+      input,
+      participantId,
+    );
   }
 
   findById(businessId: string, id: string): Promise<ComplaintRecord | null> {

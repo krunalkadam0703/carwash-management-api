@@ -6,6 +6,7 @@ import { complaintRepository } from '../repositories/complaint/index.js';
 import { auditLogService } from './audit-log.service.js';
 import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/app-error.js';
+import type { PaginationInput, PaginatedResult } from '../utils/pagination.js';
 
 export class SubscriptionService {
   async list(user: AppUser): Promise<SubscriptionRecord[]> {
@@ -59,6 +60,18 @@ export class SubscriptionService {
       metadata: { subscriptionId: subscription.id },
     });
     return subscription;
+  }
+
+  async listPage(
+    user: AppUser,
+    input: PaginationInput,
+  ): Promise<PaginatedResult<SubscriptionRecord>> {
+    const businessId = this.requireBusinessId(user);
+    return subscriptionRepository.findPageByBusinessId(
+      businessId,
+      input,
+      user.role === 'CUSTOMER' ? user.id : undefined,
+    );
   }
 
   async approve(user: AppUser, id: string, remarks?: string): Promise<SubscriptionRecord> {

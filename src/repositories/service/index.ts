@@ -3,6 +3,7 @@ import type {
   ServiceRecord,
   UpdateServiceInput,
 } from '../../models/service.model.js';
+import type { PaginationInput, PaginatedResult } from '../../utils/pagination.js';
 import { serviceCacheRepository } from './cache.js';
 import { servicePersistentStorageRepository } from './persistent-storage.js';
 
@@ -67,6 +68,13 @@ export class ServiceRepository {
       serviceCacheRepository.invalidateBusiness(businessId),
     ]);
     return service;
+  }
+
+  findPageByBusinessId(
+    businessId: string,
+    input: PaginationInput,
+  ): Promise<PaginatedResult<ServiceRecord>> {
+    return servicePersistentStorageRepository.findPageByBusinessId(businessId, input);
   }
 }
 

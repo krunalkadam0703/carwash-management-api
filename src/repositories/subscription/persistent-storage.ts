@@ -4,6 +4,8 @@ import type {
   SubscriptionRecord,
   UpdateSubscriptionStatusInput,
 } from '../../models/subscription.model.js';
+import type { PaginationInput, PaginatedResult } from '../../utils/pagination.js';
+import { paginated, skip } from '../../utils/pagination.js';
 
 type PrismaSubscription = Omit<SubscriptionRecord, 'amount'> & { amount: { toString(): string } };
 type SubscriptionForActivation = PrismaSubscription & {
@@ -12,6 +14,7 @@ type SubscriptionForActivation = PrismaSubscription & {
 type SubscriptionDelegate = {
   findMany(args: unknown): Promise<PrismaSubscription[]>;
   findFirst(args: unknown): Promise<(PrismaSubscription | SubscriptionForActivation) | null>;
+  count(args: unknown): Promise<number>;
   create(args: unknown): Promise<PrismaSubscription>;
   update(args: unknown): Promise<PrismaSubscription>;
 };
@@ -71,6 +74,40 @@ export class SubscriptionPersistentStorageRepository {
       orderBy: { createdAt: 'desc' },
     });
     return rows.map(mapSubscription);
+  }
+
+  async findPageByBusinessId(
+    businessId: string,
+    input: PaginationInput,
+    customerId?: string,
+  ): Promise<PaginatedResult<SubscriptionRecord>> {
+    const where = {
+      businessId,
+      ...(customerId ? { customerId } : {}),
+      ...(input.status ? { status: input.status } : {}),
+      ...(input.search ? {
+        OR: [
+          { customer: { name: { contains: input.search, mode: 'insensitive' } } },
+          { customer: { email: { contains: input.search, mode: 'insensitive' } } },
+          { vehicle: { vehicleNumber: { contains: input.search, mode: 'insensitive' } } },
+          { vehicle: { vehicleName: { contains: input.search, mode: 'insensitive' } } },
+        ],
+      } : {}),
+    };
+    const [total, rows] = await Promise.all([
+      db.vehicleSubscription.count({ where }),
+      db.vehicleSubscription.findMany({
+        where,
+        include: {
+          customer: { select: { name: true, email: true, phoneNumber: true } },
+          business: { select: { owner: { select: { name: true, email: true, phoneNumber: true } } } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: skip(input),
+        take: input.pageSize,
+      }),
+    ]);
+    return paginated(rows.map(mapSubscription), total, input);
   }
 
   async findById(businessId: string, id: string): Promise<SubscriptionRecord | null> {

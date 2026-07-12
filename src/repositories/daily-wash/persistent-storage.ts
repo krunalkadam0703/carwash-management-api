@@ -4,10 +4,13 @@ import type {
   DailyWashRecord,
   UpdateDailyWashInput,
 } from '../../models/daily-wash.model.js';
+import type { PaginationInput, PaginatedResult } from '../../utils/pagination.js';
+import { paginated, skip } from '../../utils/pagination.js';
 
 type DailyWashDelegate = {
   findMany(args: unknown): Promise<DailyWashRecord[]>;
   findFirst(args: unknown): Promise<DailyWashRecord | null>;
+  count(args: unknown): Promise<number>;
   createMany(args: unknown): Promise<unknown>;
   update(args: unknown): Promise<DailyWashRecord>;
 };
@@ -45,6 +48,54 @@ export class DailyWashPersistentStorageRepository {
       },
       orderBy: [{ washDate: 'asc' }, { createdAt: 'asc' }],
     });
+  }
+
+  async findPageByBusinessId(
+    businessId: string,
+    input: PaginationInput,
+    date?: Date,
+    endDate?: Date,
+    customerId?: string,
+  ): Promise<PaginatedResult<DailyWashRecord>> {
+    const where = {
+      businessId,
+      ...(date && endDate ? { washDate: { gte: date, lte: endDate } } : {}),
+      ...(date && !endDate ? { washDate: date } : {}),
+      ...(customerId ? { customerId } : {}),
+      ...(input.status ? { status: input.status } : {}),
+      ...(input.search ? {
+        OR: [
+          { vehicle: { vehicleNumber: { contains: input.search, mode: 'insensitive' } } },
+          { vehicle: { vehicleName: { contains: input.search, mode: 'insensitive' } } },
+          { vehicle: { location: { contains: input.search, mode: 'insensitive' } } },
+          { vehicle: { customer: { name: { contains: input.search, mode: 'insensitive' } } } },
+        ],
+      } : {}),
+    };
+    const include = {
+      vehicle: {
+        select: {
+          vehicleNumber: true,
+          vehicleName: true,
+          brand: true,
+          model: true,
+          location: true,
+          availableTimeSlot: true,
+          customer: { select: { name: true, phoneNumber: true, address: true } },
+        },
+      },
+    };
+    const [total, rows] = await Promise.all([
+      db.dailyWashSchedule.count({ where }),
+      db.dailyWashSchedule.findMany({
+        where,
+        include,
+        orderBy: [{ washDate: 'asc' }, { createdAt: 'asc' }],
+        skip: skip(input),
+        take: input.pageSize,
+      }),
+    ]);
+    return paginated(rows, total, input);
   }
 
   findById(businessId: string, id: string): Promise<DailyWashRecord | null> {

@@ -4,16 +4,25 @@ import type {
   UpdateVehicleInput,
   VehicleRecord,
 } from '../../models/vehicle.model.js';
+import type { PaginationInput, PaginatedResult } from '../../utils/pagination.js';
+import { paginated, skip } from '../../utils/pagination.js';
 
 type VehicleDelegate = {
   findMany(args: unknown): Promise<VehicleRecord[]>;
   findFirst(args: unknown): Promise<VehicleRecord | null>;
+  count(args: unknown): Promise<number>;
   create(args: unknown): Promise<VehicleRecord>;
   update(args: unknown): Promise<VehicleRecord>;
 };
+type AssignmentDelegate = { findMany(args: unknown): Promise<{ vehicleId: string }[]> };
 type UserDelegate = { findFirst(args: unknown): Promise<{ id: string } | null> };
 type VehicleTypeDelegate = { findFirst(args: unknown): Promise<{ id: string } | null> };
-type AppDb = { vehicle: VehicleDelegate; user: UserDelegate; vehicleType: VehicleTypeDelegate };
+type AppDb = {
+  vehicle: VehicleDelegate;
+  user: UserDelegate;
+  vehicleType: VehicleTypeDelegate;
+  workerAssignment: AssignmentDelegate;
+};
 
 const db = prisma as unknown as AppDb;
 
@@ -27,6 +36,43 @@ export class VehiclePersistentStorageRepository {
 
   findById(businessId: string, id: string): Promise<VehicleRecord | null> {
     return db.vehicle.findFirst({ where: { id, businessId } });
+  }
+
+  async findPageByBusinessId(
+    businessId: string,
+    input: PaginationInput,
+    customerId?: string,
+  ): Promise<PaginatedResult<VehicleRecord>> {
+    const assignmentVehicleIds = input.assignment && input.assignment !== 'all'
+      ? (await db.workerAssignment.findMany({
+        where: { businessId, status: { not: 'COMPLETED' } },
+        select: { vehicleId: true },
+      })).map(row => row.vehicleId)
+      : undefined;
+    const where = {
+      businessId,
+      ...(customerId ? { customerId } : {}),
+      ...(input.assignment === 'assigned' ? { id: { in: assignmentVehicleIds ?? [] } } : {}),
+      ...(input.assignment === 'unassigned' ? { id: { notIn: assignmentVehicleIds ?? [] } } : {}),
+      ...(input.search ? {
+        OR: [
+          { vehicleNumber: { contains: input.search, mode: 'insensitive' } },
+          { vehicleName: { contains: input.search, mode: 'insensitive' } },
+          { location: { contains: input.search, mode: 'insensitive' } },
+          { availableTimeSlot: { contains: input.search, mode: 'insensitive' } },
+        ],
+      } : {}),
+    };
+    const [total, rows] = await Promise.all([
+      db.vehicle.count({ where }),
+      db.vehicle.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: skip(input),
+        take: input.pageSize,
+      }),
+    ]);
+    return paginated(rows, total, input);
   }
 
   findByVehicleNumber(

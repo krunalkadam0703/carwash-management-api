@@ -5,9 +5,16 @@ import type { AuthenticatedUser } from '../models/auth.model.js';
 import { customerService } from '../services/customer.service.js';
 import { ApiResponse } from '../utils/api-response.js';
 import { AppError } from '../utils/app-error.js';
+import { parsePagination } from '../utils/pagination.js';
 
 export class CustomerController {
   list = async (req: Request, res: Response): Promise<void> => {
+    const pagination = parsePagination(req.query);
+    if (pagination) {
+      const result = await customerService.listPage(this.user(req), pagination);
+      ApiResponse.success(res, { customers: result.items, pagination: result.pagination }, 'Customers loaded.');
+      return;
+    }
     const customers = await customerService.list(this.user(req));
     ApiResponse.success(res, { customers }, 'Customers loaded.');
   };

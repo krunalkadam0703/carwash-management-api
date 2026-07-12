@@ -5,9 +5,16 @@ import type { AuthenticatedUser } from '../models/auth.model.js';
 import { serviceService } from '../services/service.service.js';
 import { ApiResponse } from '../utils/api-response.js';
 import { AppError } from '../utils/app-error.js';
+import { parsePagination } from '../utils/pagination.js';
 
 export class ServiceController {
   list = async (req: Request, res: Response): Promise<void> => {
+    const pagination = parsePagination(req.query);
+    if (pagination) {
+      const result = await serviceService.listPage(this.getSessionUser(req), pagination);
+      ApiResponse.success(res, { services: result.items, pagination: result.pagination }, 'Services loaded.');
+      return;
+    }
     const services = await serviceService.list(this.getSessionUser(req));
     ApiResponse.success(res, { services }, 'Services loaded.');
   };

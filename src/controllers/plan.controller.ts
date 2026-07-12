@@ -5,9 +5,16 @@ import type { AuthenticatedUser } from '../models/auth.model.js';
 import { planService } from '../services/plan.service.js';
 import { ApiResponse } from '../utils/api-response.js';
 import { AppError } from '../utils/app-error.js';
+import { parsePagination } from '../utils/pagination.js';
 
 export class PlanController {
   list = async (req: Request, res: Response): Promise<void> => {
+    const pagination = parsePagination(req.query);
+    if (pagination) {
+      const result = await planService.listPage(this.user(req), pagination);
+      ApiResponse.success(res, { plans: result.items, pagination: result.pagination }, 'Plans loaded.');
+      return;
+    }
     const plans = await planService.list(this.user(req), req.query.activeOnly === 'true');
     ApiResponse.success(res, { plans }, 'Plans loaded.');
   };

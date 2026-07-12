@@ -1,5 +1,7 @@
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
 import type { CreatePlanInput, PlanRecord, UpdatePlanInput } from '../../models/plan.model.js';
+import type { PaginationInput, PaginatedResult } from '../../utils/pagination.js';
+import { paginated, skip } from '../../utils/pagination.js';
 
 type PrismaPlanRecord = Omit<PlanRecord, 'price' | 'serviceIds'> & {
   price: { toString(): string };
@@ -8,6 +10,7 @@ type PrismaPlanRecord = Omit<PlanRecord, 'price' | 'serviceIds'> & {
 type PlanDelegate = {
   findMany(args: unknown): Promise<PrismaPlanRecord[]>;
   findFirst(args: unknown): Promise<PrismaPlanRecord | null>;
+  count(args: unknown): Promise<number>;
   create(args: unknown): Promise<PrismaPlanRecord>;
   update(args: unknown): Promise<PrismaPlanRecord>;
 };
@@ -77,6 +80,37 @@ export class PlanPersistentStorageRepository {
       });
       return mapPlan(savedPlan ?? plan);
     });
+  }
+
+  async findPageByBusinessId(
+    businessId: string,
+    input: PaginationInput,
+  ): Promise<PaginatedResult<PlanRecord>> {
+    const activeOnly = input.activeOnly === 'true';
+    const where = {
+      businessId,
+      ...(activeOnly || input.status === 'active' ? { isActive: true } : {}),
+      ...(input.status === 'inactive' ? { isActive: false } : {}),
+      ...(input.vehicleTypeId ? { vehicleTypeId: input.vehicleTypeId } : {}),
+      ...(input.search ? {
+        OR: [
+          { name: { contains: input.search, mode: 'insensitive' } },
+          { description: { contains: input.search, mode: 'insensitive' } },
+          { category: { contains: input.search, mode: 'insensitive' } },
+        ],
+      } : {}),
+    };
+    const [total, plans] = await Promise.all([
+      db.plan.count({ where }),
+      db.plan.findMany({
+        where,
+        include: { services: { select: { serviceId: true } } },
+        orderBy: [{ isFeatured: 'desc' }, { createdAt: 'desc' }],
+        skip: skip(input),
+        take: input.pageSize,
+      }),
+    ]);
+    return paginated(plans.map(mapPlan), total, input);
   }
 
   async update(input: UpdatePlanInput): Promise<PlanRecord> {

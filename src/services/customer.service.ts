@@ -2,11 +2,21 @@ import { HttpStatus } from '../constants/http.js';
 import type { AppUser } from '../models/auth.model.js';
 import { userRepository } from '../repositories/user/index.js';
 import { AppError } from '../utils/app-error.js';
+import type { PaginationInput, PaginatedResult } from '../utils/pagination.js';
 
 export class CustomerService {
   async list(user: AppUser): Promise<AppUser[]> {
     this.requireOwner(user);
     return userRepository.findManyByBusinessAndRole(this.requireBusinessId(user), 'CUSTOMER');
+  }
+
+  async listPage(user: AppUser, input: PaginationInput): Promise<PaginatedResult<AppUser>> {
+    this.requireOwner(user);
+    return userRepository.findPageByBusinessAndRole(
+      this.requireBusinessId(user),
+      'CUSTOMER',
+      input,
+    );
   }
 
   async update(

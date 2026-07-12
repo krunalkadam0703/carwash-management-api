@@ -8,6 +8,8 @@ import type {
   FailWebhookPaymentInput,
   PaymentRecord,
 } from '../../models/payment.model.js';
+import type { PaginationInput, PaginatedResult } from '../../utils/pagination.js';
+import { paginated, skip } from '../../utils/pagination.js';
 
 type PrismaPayment = Omit<PaymentRecord, 'amount'> & { amount: { toString(): string } };
 type SubscriptionForPayment = {
@@ -21,6 +23,7 @@ type SubscriptionForPayment = {
 type PaymentDelegate = {
   findMany(args: unknown): Promise<PrismaPayment[]>;
   findFirst(args: unknown): Promise<PrismaPayment | null>;
+  count(args: unknown): Promise<number>;
   create(args: unknown): Promise<PrismaPayment>;
   update(args: unknown): Promise<PrismaPayment>;
 };
@@ -66,6 +69,44 @@ export class PaymentPersistentStorageRepository {
       orderBy: { createdAt: 'desc' },
     });
     return rows.map(mapPayment);
+  }
+
+  async findPageByBusinessId(
+    businessId: string,
+    input: PaginationInput,
+    customerId?: string,
+    subscriptionId?: string,
+  ): Promise<PaginatedResult<PaymentRecord>> {
+    const where = {
+      businessId,
+      ...(customerId ? { customerId } : {}),
+      ...(subscriptionId ? { subscriptionId } : {}),
+      ...(input.status && input.status !== 'all' ? { status: input.status } : {}),
+      ...(input.method && input.method !== 'all'
+        ? input.method === 'subscription'
+          ? { OR: [{ paymentMethod: 'subscription' }, { paymentMethod: null }] }
+          : { paymentMethod: input.method }
+        : {}),
+      ...(input.search ? {
+        OR: [
+          { id: { contains: input.search } },
+          { receiptId: { contains: input.search } },
+          { razorpayOrderId: { contains: input.search } },
+          { razorpayPaymentId: { contains: input.search } },
+          { upiRef: { contains: input.search } },
+        ],
+      } : {}),
+    };
+    const [total, rows] = await Promise.all([
+      db.payment.count({ where }),
+      db.payment.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: skip(input),
+        take: input.pageSize,
+      }),
+    ]);
+    return paginated(rows.map(mapPayment), total, input);
   }
 
   async findById(businessId: string, id: string): Promise<PaymentRecord | null> {

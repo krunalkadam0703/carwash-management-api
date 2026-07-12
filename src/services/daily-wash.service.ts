@@ -6,6 +6,7 @@ import { dailyWashRepository } from '../repositories/daily-wash/index.js';
 import { workerRepository } from '../repositories/worker/index.js';
 import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/app-error.js';
+import type { PaginationInput, PaginatedResult } from '../utils/pagination.js';
 
 const slotKey = (businessId: string, dailyWashId: string): string =>
   `daily-wash-slot:${businessId}:${dailyWashId}`;
@@ -40,6 +41,38 @@ export class DailyWashService {
     return user.role === 'WORKER'
       ? enriched.filter((row) => row.assignedWorkerId === user.id)
       : enriched;
+  }
+
+  async listPage(
+    user: AppUser,
+    input: PaginationInput,
+    date?: Date,
+    endDate?: Date,
+  ): Promise<PaginatedResult<DailyWashRecord>> {
+    const businessId = this.requireBusinessId(user);
+    await this.ensureSchedules(businessId, date, endDate);
+    const result = await dailyWashRepository.findPageByBusinessId(
+      businessId,
+      input,
+      date,
+      endDate,
+      user.role === 'CUSTOMER' ? user.id : undefined,
+    );
+    const permanentWorkerByVehicle = await this.activeWorkerByVehicle(businessId);
+    const items = await Promise.all(result.items.map(async (row) => {
+      const temporaryWorkerId = await redisService.get(workerKey(row.businessId, row.id));
+      return {
+        ...row,
+        slotOverride: await redisService.get(slotKey(row.businessId, row.id)),
+        queueOrder: Number(await redisService.get(queueKey(row.businessId, row.id))) || null,
+        temporaryWorkerId,
+        assignedWorkerId: temporaryWorkerId ?? permanentWorkerByVehicle.get(row.vehicleId) ?? null,
+      };
+    }));
+    return {
+      ...result,
+      items: user.role === 'WORKER' ? items.filter((row) => row.assignedWorkerId === user.id) : items,
+    };
   }
 
   async generate(user: AppUser, date: Date): Promise<DailyWashRecord[]> {

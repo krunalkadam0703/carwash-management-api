@@ -11,12 +11,27 @@ import { auditLogService } from './audit-log.service.js';
 import { notificationService } from './notification.service.js';
 import { AppError } from '../utils/app-error.js';
 import { createHmac } from 'node:crypto';
+import type { PaginationInput, PaginatedResult } from '../utils/pagination.js';
 
 export class PaymentService {
   async list(user: AppUser, subscriptionId?: string): Promise<PaymentRecord[]> {
     const businessId = this.requireBusinessId(user);
     return paymentRepository.findManyByBusinessId(
       businessId,
+      user.role === 'CUSTOMER' ? user.id : undefined,
+      subscriptionId,
+    );
+  }
+
+  async listPage(
+    user: AppUser,
+    input: PaginationInput,
+    subscriptionId?: string,
+  ): Promise<PaginatedResult<PaymentRecord>> {
+    const businessId = this.requireBusinessId(user);
+    return paymentRepository.findPageByBusinessId(
+      businessId,
+      input,
       user.role === 'CUSTOMER' ? user.id : undefined,
       subscriptionId,
     );
