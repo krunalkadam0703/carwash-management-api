@@ -5,11 +5,7 @@ export class RedisService {
     return RedisClient.getClient().get(key);
   }
 
-  public async set(
-    key: string,
-    value: string,
-    ttlSeconds?: number,
-  ): Promise<void> {
+  public async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
     const client = RedisClient.getClient();
 
     if (ttlSeconds) {
@@ -22,6 +18,30 @@ export class RedisService {
 
   public async delete(key: string): Promise<void> {
     await RedisClient.getClient().del(key);
+  }
+
+  public async deleteMany(keys: string[]): Promise<void> {
+    if (!keys.length) {
+      return;
+    }
+
+    await Promise.all(keys.map((key) => RedisClient.getClient().del(key)));
+  }
+
+  public async deleteByPattern(pattern: string): Promise<void> {
+    const client = RedisClient.getClient();
+    const keys: string[] = [];
+
+    for await (const key of client.scanIterator({ MATCH: pattern, COUNT: 100 })) {
+      if (Array.isArray(key)) {
+        keys.push(...key);
+        continue;
+      }
+
+      keys.push(key);
+    }
+
+    await this.deleteMany(keys);
   }
 
   public async exists(key: string): Promise<boolean> {
