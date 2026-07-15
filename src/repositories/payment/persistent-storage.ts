@@ -87,15 +87,17 @@ export class PaymentPersistentStorageRepository {
           ? { OR: [{ paymentMethod: 'subscription' }, { paymentMethod: null }] }
           : { paymentMethod: input.method }
         : {}),
-      ...(input.search ? {
-        OR: [
-          { id: { contains: input.search } },
-          { receiptId: { contains: input.search } },
-          { razorpayOrderId: { contains: input.search } },
-          { razorpayPaymentId: { contains: input.search } },
-          { upiRef: { contains: input.search } },
-        ],
-      } : {}),
+      ...(input.search
+        ? {
+            OR: [
+              { id: { contains: input.search } },
+              { receiptId: { contains: input.search } },
+              { razorpayOrderId: { contains: input.search } },
+              { razorpayPaymentId: { contains: input.search } },
+              { upiRef: { contains: input.search } },
+            ],
+          }
+        : {}),
     };
     const [total, rows] = await Promise.all([
       db.payment.count({ where }),

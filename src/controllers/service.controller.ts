@@ -12,7 +12,11 @@ export class ServiceController {
     const pagination = parsePagination(req.query);
     if (pagination) {
       const result = await serviceService.listPage(this.getSessionUser(req), pagination);
-      ApiResponse.success(res, { services: result.items, pagination: result.pagination }, 'Services loaded.');
+      ApiResponse.success(
+        res,
+        { services: result.items, pagination: result.pagination },
+        'Services loaded.',
+      );
       return;
     }
     const services = await serviceService.list(this.getSessionUser(req));

@@ -40,7 +40,11 @@ export function parsePagination(query: Record<string, unknown>): PaginationInput
   };
 }
 
-export function paginated<T>(items: T[], total: number, input: PaginationInput): PaginatedResult<T> {
+export function paginated<T>(
+  items: T[],
+  total: number,
+  input: PaginationInput,
+): PaginatedResult<T> {
   return {
     items,
     pagination: {
@@ -60,7 +64,13 @@ function textParam(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
-function numberParam(value: unknown, field: string, fallback: number, min: number, max: number): number {
+function numberParam(
+  value: unknown,
+  field: string,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
   const parsed = value === undefined ? fallback : Number(value);
   if (!Number.isInteger(parsed) || parsed < min || parsed > max)
     throw new AppError(`${field} must be between ${min} and ${max}.`, HttpStatus.BAD_REQUEST);

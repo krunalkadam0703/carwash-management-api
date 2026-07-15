@@ -35,7 +35,8 @@ export class VehicleService {
       user.role === 'CUSTOMER' ? user.id : this.text(input.customerId, 'customerId');
     await this.ensureCustomer(businessId, customerId);
     await this.ensureVehicleType(businessId, input.vehicleTypeId);
-    if (!input.location) throw new AppError('Vehicle address and GPS are required.', HttpStatus.BAD_REQUEST);
+    if (!input.location)
+      throw new AppError('Vehicle address and GPS are required.', HttpStatus.BAD_REQUEST);
     await this.ensureVehicleNumberAvailable(businessId, input.vehicleNumber);
     return vehicleRepository.create({ ...input, businessId, customerId });
   }
@@ -53,14 +54,21 @@ export class VehicleService {
     const businessId = this.requireBusinessId(user);
     const vehicle = await this.requireVehicle(businessId, id);
     this.ensureCanAccess(user, vehicle);
-    if (user.role === 'CUSTOMER' && input.vehicleNumber && input.vehicleNumber !== vehicle.vehicleNumber)
+    if (
+      user.role === 'CUSTOMER' &&
+      input.vehicleNumber &&
+      input.vehicleNumber !== vehicle.vehicleNumber
+    )
       throw new AppError('Vehicle number cannot be changed.', HttpStatus.FORBIDDEN);
     if (input.customerId) this.requireOwner(user);
     if (input.customerId) await this.ensureCustomer(businessId, input.customerId);
     if (input.vehicleTypeId) await this.ensureVehicleType(businessId, input.vehicleTypeId);
     if (input.vehicleNumber)
       await this.ensureVehicleNumberAvailable(businessId, input.vehicleNumber, id);
-    const updated = await vehicleRepository.update({ ...input, id, businessId }, vehicle.customerId);
+    const updated = await vehicleRepository.update(
+      { ...input, id, businessId },
+      vehicle.customerId,
+    );
     if (input.availableTimeSlot && input.availableTimeSlot !== vehicle.availableTimeSlot)
       await this.notifyOwnerTimeChanged(businessId, updated);
     return updated;

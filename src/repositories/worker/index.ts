@@ -28,7 +28,11 @@ export class WorkerRepository {
     workerId?: string,
     customerId?: string,
   ): Promise<WorkerAssignmentRecord[]> {
-    return workerPersistentStorageRepository.findAssignmentsByBusinessId(businessId, workerId, customerId);
+    return workerPersistentStorageRepository.findAssignmentsByBusinessId(
+      businessId,
+      workerId,
+      customerId,
+    );
   }
 
   createAssignment(input: CreateWorkerAssignmentInput): Promise<WorkerAssignmentRecord> {

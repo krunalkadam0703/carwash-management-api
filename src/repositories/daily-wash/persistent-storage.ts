@@ -63,14 +63,16 @@ export class DailyWashPersistentStorageRepository {
       ...(date && !endDate ? { washDate: date } : {}),
       ...(customerId ? { customerId } : {}),
       ...(input.status ? { status: input.status } : {}),
-      ...(input.search ? {
-        OR: [
-          { vehicle: { vehicleNumber: { contains: input.search, mode: 'insensitive' } } },
-          { vehicle: { vehicleName: { contains: input.search, mode: 'insensitive' } } },
-          { vehicle: { location: { contains: input.search, mode: 'insensitive' } } },
-          { vehicle: { customer: { name: { contains: input.search, mode: 'insensitive' } } } },
-        ],
-      } : {}),
+      ...(input.search
+        ? {
+            OR: [
+              { vehicle: { vehicleNumber: { contains: input.search, mode: 'insensitive' } } },
+              { vehicle: { vehicleName: { contains: input.search, mode: 'insensitive' } } },
+              { vehicle: { location: { contains: input.search, mode: 'insensitive' } } },
+              { vehicle: { customer: { name: { contains: input.search, mode: 'insensitive' } } } },
+            ],
+          }
+        : {}),
     };
     const include = {
       vehicle: {

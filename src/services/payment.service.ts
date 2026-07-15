@@ -84,7 +84,14 @@ export class PaymentService {
       actionUrl: `/customer/plans`,
       metadata: { paymentId: payment.id, subscriptionId },
     });
-    await this.notifyOwner(businessId, 'PAYMENT_PENDING', 'Payment started', 'A customer started a subscription payment.', payment.id, subscriptionId);
+    await this.notifyOwner(
+      businessId,
+      'PAYMENT_PENDING',
+      'Payment started',
+      'A customer started a subscription payment.',
+      payment.id,
+      subscriptionId,
+    );
     return { payment, gateway };
   }
 
@@ -110,9 +117,11 @@ export class PaymentService {
       payment.subscriptionId,
     );
     if (!subscription) throw new AppError('Subscription was not found.', HttpStatus.NOT_FOUND);
-    const completed = await paymentRepository.complete(
-      { ...input, id, businessId: payment.businessId },
-    );
+    const completed = await paymentRepository.complete({
+      ...input,
+      id,
+      businessId: payment.businessId,
+    });
     await auditLogService.create({
       businessId: completed.businessId,
       userId: user.id,
@@ -130,7 +139,14 @@ export class PaymentService {
       actionUrl: `/customer/plans`,
       metadata: { paymentId: completed.id, subscriptionId: completed.subscriptionId },
     });
-    await this.notifyOwner(completed.businessId, 'PAYMENT_SUCCESS', 'Payment completed', 'A customer completed payment. Activate the subscription.', completed.id, completed.subscriptionId);
+    await this.notifyOwner(
+      completed.businessId,
+      'PAYMENT_SUCCESS',
+      'Payment completed',
+      'A customer completed payment. Activate the subscription.',
+      completed.id,
+      completed.subscriptionId,
+    );
     return completed;
   }
 
@@ -160,7 +176,14 @@ export class PaymentService {
       actionUrl: `/customer/plans`,
       metadata: { paymentId: failed.id, subscriptionId: failed.subscriptionId },
     });
-    await this.notifyOwner(failed.businessId, 'PAYMENT_FAILED', 'Payment failed', failureReason ?? 'A customer payment failed.', failed.id, failed.subscriptionId);
+    await this.notifyOwner(
+      failed.businessId,
+      'PAYMENT_FAILED',
+      'Payment failed',
+      failureReason ?? 'A customer payment failed.',
+      failed.id,
+      failed.subscriptionId,
+    );
     return failed;
   }
 

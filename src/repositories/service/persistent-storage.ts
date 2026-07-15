@@ -55,16 +55,23 @@ export class ServicePersistentStorageRepository {
       ...(input.vehicleTypeId ? { vehicleTypeId: input.vehicleTypeId } : {}),
       ...(input.status === 'active' ? { isActive: true } : {}),
       ...(input.status === 'inactive' ? { isActive: false } : {}),
-      ...(input.search ? {
-        OR: [
-          { name: { contains: input.search, mode: 'insensitive' } },
-          { description: { contains: input.search, mode: 'insensitive' } },
-        ],
-      } : {}),
+      ...(input.search
+        ? {
+            OR: [
+              { name: { contains: input.search, mode: 'insensitive' } },
+              { description: { contains: input.search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
     };
     const [total, services] = await Promise.all([
       db.service.count({ where }),
-      db.service.findMany({ where, orderBy: { createdAt: 'desc' }, skip: skip(input), take: input.pageSize }),
+      db.service.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: skip(input),
+        take: input.pageSize,
+      }),
     ]);
     return paginated(services.map(mapService), total, input);
   }

@@ -32,10 +32,7 @@ export class VehicleRepository {
     return vehiclePersistentStorageRepository.findPageByBusinessId(businessId, input, customerId);
   }
 
-  findByVehicleNumber(
-    businessId: string,
-    vehicleNumber: string,
-  ): Promise<VehicleRecord | null> {
+  findByVehicleNumber(businessId: string, vehicleNumber: string): Promise<VehicleRecord | null> {
     return vehiclePersistentStorageRepository.findByVehicleNumber(businessId, vehicleNumber);
   }
 

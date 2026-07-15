@@ -12,7 +12,11 @@ export class ComplaintController {
     const pagination = parsePagination(req.query);
     if (pagination) {
       const result = await complaintService.listPage(this.user(req), pagination);
-      ApiResponse.success(res, { complaints: result.items, pagination: result.pagination }, 'Complaints loaded.');
+      ApiResponse.success(
+        res,
+        { complaints: result.items, pagination: result.pagination },
+        'Complaints loaded.',
+      );
       return;
     }
     const complaints = await complaintService.list(this.user(req));

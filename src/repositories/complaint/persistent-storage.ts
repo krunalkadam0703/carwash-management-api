@@ -37,13 +37,15 @@ export class ComplaintPersistentStorageRepository {
     return db.complaint.findMany({
       where: {
         businessId,
-        ...(participantId ? {
-          OR: [
-            { customerId: participantId },
-            { workerId: participantId },
-            { createdById: participantId },
-          ],
-        } : {}),
+        ...(participantId
+          ? {
+              OR: [
+                { customerId: participantId },
+                { workerId: participantId },
+                { createdById: participantId },
+              ],
+            }
+          : {}),
       },
       include: {
         customer: { select: { id: true, name: true, email: true, phoneNumber: true } },
@@ -62,20 +64,30 @@ export class ComplaintPersistentStorageRepository {
     const where = {
       businessId,
       ...(input.status ? { status: input.status } : {}),
-      ...(participantId ? {
-        OR: [{ customerId: participantId }, { workerId: participantId }, { createdById: participantId }],
-      } : {}),
-      ...(input.search ? {
-        AND: [{
-          OR: [
-            { subject: { contains: input.search, mode: 'insensitive' } },
-            { message: { contains: input.search, mode: 'insensitive' } },
-            { conclusion: { contains: input.search, mode: 'insensitive' } },
-            { customer: { name: { contains: input.search, mode: 'insensitive' } } },
-            { worker: { name: { contains: input.search, mode: 'insensitive' } } },
-          ],
-        }],
-      } : {}),
+      ...(participantId
+        ? {
+            OR: [
+              { customerId: participantId },
+              { workerId: participantId },
+              { createdById: participantId },
+            ],
+          }
+        : {}),
+      ...(input.search
+        ? {
+            AND: [
+              {
+                OR: [
+                  { subject: { contains: input.search, mode: 'insensitive' } },
+                  { message: { contains: input.search, mode: 'insensitive' } },
+                  { conclusion: { contains: input.search, mode: 'insensitive' } },
+                  { customer: { name: { contains: input.search, mode: 'insensitive' } } },
+                  { worker: { name: { contains: input.search, mode: 'insensitive' } } },
+                ],
+              },
+            ],
+          }
+        : {}),
     };
     const include = {
       customer: { select: { id: true, name: true, email: true, phoneNumber: true } },
@@ -84,7 +96,13 @@ export class ComplaintPersistentStorageRepository {
     };
     const [total, rows] = await Promise.all([
       db.complaint.count({ where }),
-      db.complaint.findMany({ where, include, orderBy: { createdAt: 'desc' }, skip: skip(input), take: input.pageSize }),
+      db.complaint.findMany({
+        where,
+        include,
+        orderBy: { createdAt: 'desc' },
+        skip: skip(input),
+        take: input.pageSize,
+      }),
     ]);
     return paginated(rows, total, input);
   }
@@ -101,8 +119,10 @@ export class ComplaintPersistentStorageRepository {
   }
 
   async findOwnerId(businessId: string): Promise<string | null> {
-    return (await db.business.findFirst({ where: { id: businessId }, select: { ownerId: true } }))
-      ?.ownerId ?? null;
+    return (
+      (await db.business.findFirst({ where: { id: businessId }, select: { ownerId: true } }))
+        ?.ownerId ?? null
+    );
   }
 
   create(input: CreateComplaintInput): Promise<ComplaintRecord> {

@@ -141,7 +141,12 @@ export class SubscriptionService {
     const row = await this.requireSubscription(this.requireBusinessId(user), id);
     if (row.status !== 'PAYMENT_COMPLETED')
       throw new AppError('Only paid subscriptions can be activated.', HttpStatus.CONFLICT);
-    const subscription = await subscriptionRepository.activate(row.businessId, id, user.id, remarks);
+    const subscription = await subscriptionRepository.activate(
+      row.businessId,
+      id,
+      user.id,
+      remarks,
+    );
     await auditLogService.create({
       businessId: row.businessId,
       userId: user.id,
@@ -212,7 +217,13 @@ export class SubscriptionService {
 
   private async notifyOwner(
     businessId: string,
-    input: { type: 'SUBSCRIPTION_REQUEST'; title: string; message: string; actionUrl: string; metadata: unknown },
+    input: {
+      type: 'SUBSCRIPTION_REQUEST';
+      title: string;
+      message: string;
+      actionUrl: string;
+      metadata: unknown;
+    },
   ): Promise<void> {
     const ownerId = await complaintRepository.findOwnerId(businessId);
     if (!ownerId) return;

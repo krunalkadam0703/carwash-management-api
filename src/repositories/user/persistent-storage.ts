@@ -42,14 +42,16 @@ export class UserPersistentStorageRepository {
       role,
       ...(input.status === 'active' ? { isActive: true } : {}),
       ...(input.status === 'inactive' ? { isActive: false } : {}),
-      ...(input.search ? {
-        OR: [
-          { name: { contains: input.search, mode: 'insensitive' } },
-          { email: { contains: input.search, mode: 'insensitive' } },
-          { phoneNumber: { contains: input.search } },
-          { address: { contains: input.search, mode: 'insensitive' } },
-        ],
-      } : {}),
+      ...(input.search
+        ? {
+            OR: [
+              { name: { contains: input.search, mode: 'insensitive' } },
+              { email: { contains: input.search, mode: 'insensitive' } },
+              { phoneNumber: { contains: input.search } },
+              { address: { contains: input.search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
     };
     const [total, rows] = await Promise.all([
       db.user.count({ where }),

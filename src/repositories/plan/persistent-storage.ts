@@ -92,13 +92,15 @@ export class PlanPersistentStorageRepository {
       ...(activeOnly || input.status === 'active' ? { isActive: true } : {}),
       ...(input.status === 'inactive' ? { isActive: false } : {}),
       ...(input.vehicleTypeId ? { vehicleTypeId: input.vehicleTypeId } : {}),
-      ...(input.search ? {
-        OR: [
-          { name: { contains: input.search, mode: 'insensitive' } },
-          { description: { contains: input.search, mode: 'insensitive' } },
-          { category: { contains: input.search, mode: 'insensitive' } },
-        ],
-      } : {}),
+      ...(input.search
+        ? {
+            OR: [
+              { name: { contains: input.search, mode: 'insensitive' } },
+              { description: { contains: input.search, mode: 'insensitive' } },
+              { category: { contains: input.search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
     };
     const [total, plans] = await Promise.all([
       db.plan.count({ where }),

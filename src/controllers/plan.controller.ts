@@ -12,7 +12,11 @@ export class PlanController {
     const pagination = parsePagination(req.query);
     if (pagination) {
       const result = await planService.listPage(this.user(req), pagination);
-      ApiResponse.success(res, { plans: result.items, pagination: result.pagination }, 'Plans loaded.');
+      ApiResponse.success(
+        res,
+        { plans: result.items, pagination: result.pagination },
+        'Plans loaded.',
+      );
       return;
     }
     const plans = await planService.list(this.user(req), req.query.activeOnly === 'true');

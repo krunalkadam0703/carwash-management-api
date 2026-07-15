@@ -43,25 +43,30 @@ export class VehiclePersistentStorageRepository {
     input: PaginationInput,
     customerId?: string,
   ): Promise<PaginatedResult<VehicleRecord>> {
-    const assignmentVehicleIds = input.assignment && input.assignment !== 'all'
-      ? (await db.workerAssignment.findMany({
-        where: { status: { not: 'COMPLETED' }, vehicle: { businessId } },
-        select: { vehicleId: true },
-      })).map(row => row.vehicleId)
-      : undefined;
+    const assignmentVehicleIds =
+      input.assignment && input.assignment !== 'all'
+        ? (
+            await db.workerAssignment.findMany({
+              where: { status: { not: 'COMPLETED' }, vehicle: { businessId } },
+              select: { vehicleId: true },
+            })
+          ).map((row) => row.vehicleId)
+        : undefined;
     const where = {
       businessId,
       ...(customerId ? { customerId } : {}),
       ...(input.assignment === 'assigned' ? { id: { in: assignmentVehicleIds ?? [] } } : {}),
       ...(input.assignment === 'unassigned' ? { id: { notIn: assignmentVehicleIds ?? [] } } : {}),
-      ...(input.search ? {
-        OR: [
-          { vehicleNumber: { contains: input.search, mode: 'insensitive' } },
-          { vehicleName: { contains: input.search, mode: 'insensitive' } },
-          { location: { contains: input.search, mode: 'insensitive' } },
-          { availableTimeSlot: { contains: input.search, mode: 'insensitive' } },
-        ],
-      } : {}),
+      ...(input.search
+        ? {
+            OR: [
+              { vehicleNumber: { contains: input.search, mode: 'insensitive' } },
+              { vehicleName: { contains: input.search, mode: 'insensitive' } },
+              { location: { contains: input.search, mode: 'insensitive' } },
+              { availableTimeSlot: { contains: input.search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
     };
     const [total, rows] = await Promise.all([
       db.vehicle.count({ where }),
@@ -75,10 +80,7 @@ export class VehiclePersistentStorageRepository {
     return paginated(rows, total, input);
   }
 
-  findByVehicleNumber(
-    businessId: string,
-    vehicleNumber: string,
-  ): Promise<VehicleRecord | null> {
+  findByVehicleNumber(businessId: string, vehicleNumber: string): Promise<VehicleRecord | null> {
     return db.vehicle.findFirst({ where: { businessId, vehicleNumber } });
   }
 

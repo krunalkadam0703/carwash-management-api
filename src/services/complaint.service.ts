@@ -123,7 +123,10 @@ export class ComplaintService {
   private requireTodayOrYesterday(date: Date): void {
     const allowed = new Set([this.dateKey(new Date()), this.dateKey(this.addDays(new Date(), -1))]);
     if (!allowed.has(this.dateKey(date)))
-      throw new AppError('Complaints can only be raised for today or yesterday.', HttpStatus.BAD_REQUEST);
+      throw new AppError(
+        'Complaints can only be raised for today or yesterday.',
+        HttpStatus.BAD_REQUEST,
+      );
   }
 
   private async assignedWorkerId(
@@ -133,9 +136,9 @@ export class ComplaintService {
   ): Promise<string | null> {
     return (
       (await redisService.get(workerKey(businessId, dailyWashId))) ??
-      (await workerRepository.findAssignmentsByBusinessId(businessId))
-        .find((item) => item.vehicleId === vehicleId && item.status !== 'COMPLETED')
-        ?.workerId ??
+      (await workerRepository.findAssignmentsByBusinessId(businessId)).find(
+        (item) => item.vehicleId === vehicleId && item.status !== 'COMPLETED',
+      )?.workerId ??
       null
     );
   }
@@ -158,23 +161,30 @@ export class ComplaintService {
   }
 
   private async notifyParticipants(complaint: ComplaintRecord): Promise<void> {
-    const ids = [...new Set([complaint.customerId, complaint.workerId, complaint.createdById].filter(Boolean))];
-    await Promise.all(ids.map((userId) => notificationService.create({
-      userId: userId as string,
-      type: 'SYSTEM',
-      title: 'Complaint resolved',
-      message: complaint.conclusion || 'Your complaint has been resolved.',
-      actionUrl: '/complaints',
-      metadata: { complaintId: complaint.id, dailyWashId: complaint.dailyWashId },
-    })));
+    const ids = [
+      ...new Set([complaint.customerId, complaint.workerId, complaint.createdById].filter(Boolean)),
+    ];
+    await Promise.all(
+      ids.map((userId) =>
+        notificationService.create({
+          userId: userId as string,
+          type: 'SYSTEM',
+          title: 'Complaint resolved',
+          message: complaint.conclusion || 'Your complaint has been resolved.',
+          actionUrl: '/complaints',
+          metadata: { complaintId: complaint.id, dailyWashId: complaint.dailyWashId },
+        }),
+      ),
+    );
   }
 
   private async notifyAgainstParty(complaint: ComplaintRecord, createdById: string): Promise<void> {
-    const againstId = complaint.workerId && complaint.workerId !== createdById
-      ? complaint.workerId
-      : complaint.customerId !== createdById
-        ? complaint.customerId
-        : null;
+    const againstId =
+      complaint.workerId && complaint.workerId !== createdById
+        ? complaint.workerId
+        : complaint.customerId !== createdById
+          ? complaint.customerId
+          : null;
     if (!againstId) return;
     await notificationService.create({
       userId: againstId,

@@ -16,7 +16,11 @@ export class PaymentController {
         pagination,
         paymentService.optText(req.query.subscriptionId),
       );
-      ApiResponse.success(res, { payments: result.items, pagination: result.pagination }, 'Payments loaded.');
+      ApiResponse.success(
+        res,
+        { payments: result.items, pagination: result.pagination },
+        'Payments loaded.',
+      );
       return;
     }
     const payments = await paymentService.list(

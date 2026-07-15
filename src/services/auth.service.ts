@@ -220,7 +220,10 @@ export class AuthService implements AuthServiceContract {
   private phone(value: string): string {
     const phone = value.replace(/\s|-/g, '');
     if (!/^(?:\+91)?[6-9]\d{9}$/.test(phone))
-      throw new AppError('phoneNumber must be a valid Indian mobile number.', HttpStatus.BAD_REQUEST);
+      throw new AppError(
+        'phoneNumber must be a valid Indian mobile number.',
+        HttpStatus.BAD_REQUEST,
+      );
     return phone;
   }
 

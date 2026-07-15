@@ -12,7 +12,11 @@ export class SubscriptionController {
     const pagination = parsePagination(req.query);
     if (pagination) {
       const result = await subscriptionService.listPage(this.user(req), pagination);
-      ApiResponse.success(res, { subscriptions: result.items, pagination: result.pagination }, 'Subscriptions loaded.');
+      ApiResponse.success(
+        res,
+        { subscriptions: result.items, pagination: result.pagination },
+        'Subscriptions loaded.',
+      );
       return;
     }
     const subscriptions = await subscriptionService.list(this.user(req));

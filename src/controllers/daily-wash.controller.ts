@@ -18,14 +18,14 @@ export class DailyWashController {
     const to = req.query.to ? dailyWashService.date(req.query.to) : undefined;
     if (pagination) {
       const result = await dailyWashService.listPage(this.user(req), pagination, from, to);
-      ApiResponse.success(res, { dailyWashes: result.items, pagination: result.pagination }, 'Daily washes loaded.');
+      ApiResponse.success(
+        res,
+        { dailyWashes: result.items, pagination: result.pagination },
+        'Daily washes loaded.',
+      );
       return;
     }
-    const dailyWashes = await dailyWashService.list(
-      this.user(req),
-      from,
-      to,
-    );
+    const dailyWashes = await dailyWashService.list(this.user(req), from, to);
     ApiResponse.success(res, { dailyWashes }, 'Daily washes loaded.');
   };
 

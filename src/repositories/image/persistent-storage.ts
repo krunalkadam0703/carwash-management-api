@@ -12,7 +12,9 @@ type VehicleDelegate = {
   findFirst(args: unknown): Promise<{ id: string; customerId: string } | null>;
 };
 type DailyWashDelegate = {
-  findFirst(args: unknown): Promise<{ id: string; customerId: string; vehicleId: string; status: string } | null>;
+  findFirst(
+    args: unknown,
+  ): Promise<{ id: string; customerId: string; vehicleId: string; status: string } | null>;
 };
 type ServiceDelegate = { findFirst(args: unknown): Promise<{ id: string } | null> };
 type VehiclePhotoDelegate = {

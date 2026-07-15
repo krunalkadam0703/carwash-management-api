@@ -85,14 +85,16 @@ export class SubscriptionPersistentStorageRepository {
       businessId,
       ...(customerId ? { customerId } : {}),
       ...(input.status ? { status: input.status } : {}),
-      ...(input.search ? {
-        OR: [
-          { customer: { name: { contains: input.search, mode: 'insensitive' } } },
-          { customer: { email: { contains: input.search, mode: 'insensitive' } } },
-          { vehicle: { vehicleNumber: { contains: input.search, mode: 'insensitive' } } },
-          { vehicle: { vehicleName: { contains: input.search, mode: 'insensitive' } } },
-        ],
-      } : {}),
+      ...(input.search
+        ? {
+            OR: [
+              { customer: { name: { contains: input.search, mode: 'insensitive' } } },
+              { customer: { email: { contains: input.search, mode: 'insensitive' } } },
+              { vehicle: { vehicleNumber: { contains: input.search, mode: 'insensitive' } } },
+              { vehicle: { vehicleName: { contains: input.search, mode: 'insensitive' } } },
+            ],
+          }
+        : {}),
     };
     const [total, rows] = await Promise.all([
       db.vehicleSubscription.count({ where }),
@@ -100,7 +102,9 @@ export class SubscriptionPersistentStorageRepository {
         where,
         include: {
           customer: { select: { name: true, email: true, phoneNumber: true } },
-          business: { select: { owner: { select: { name: true, email: true, phoneNumber: true } } } },
+          business: {
+            select: { owner: { select: { name: true, email: true, phoneNumber: true } } },
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip: skip(input),

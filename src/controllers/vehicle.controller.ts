@@ -12,7 +12,11 @@ export class VehicleController {
     const pagination = parsePagination(req.query);
     if (pagination) {
       const result = await vehicleService.listPage(this.user(req), pagination);
-      ApiResponse.success(res, { vehicles: result.items, pagination: result.pagination }, 'Vehicles loaded.');
+      ApiResponse.success(
+        res,
+        { vehicles: result.items, pagination: result.pagination },
+        'Vehicles loaded.',
+      );
       return;
     }
     const vehicles = await vehicleService.list(this.user(req));

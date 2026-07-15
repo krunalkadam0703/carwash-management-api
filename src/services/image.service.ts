@@ -1,6 +1,10 @@
 import { HttpStatus } from '../constants/http.js';
 import type { AppUser } from '../models/auth.model.js';
-import type { DailyWashImageRecord, ServiceImageRecord, VehicleImageRecord } from '../models/image.model.js';
+import type {
+  DailyWashImageRecord,
+  ServiceImageRecord,
+  VehicleImageRecord,
+} from '../models/image.model.js';
 import { imageRepository } from '../repositories/image/index.js';
 import { workerRepository } from '../repositories/worker/index.js';
 import { redisService } from '../infrastructure/redis/index.js';
@@ -46,14 +50,19 @@ export class ImageService {
   ): Promise<DailyWashImageRecord> {
     if (!['OWNER', 'WORKER'].includes(user.role))
       throw new AppError('Only workers or owners can upload wash photos.', HttpStatus.FORBIDDEN);
-    const dailyWash = await imageRepository.findDailyWash(this.requireBusinessId(user), dailyWashId);
+    const dailyWash = await imageRepository.findDailyWash(
+      this.requireBusinessId(user),
+      dailyWashId,
+    );
     if (!dailyWash) throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
     const type = this.photoType(photoType);
     if (dailyWash.status === 'COMPLETED')
       throw new AppError('This vehicle is already washed for today.', HttpStatus.CONFLICT);
     if (user.role === 'WORKER') {
       const override = await redisService.get(workerKey(this.requireBusinessId(user), dailyWashId));
-      const allowed = override ? override === user.id : await this.isAssignedWorker(user, dailyWash.vehicleId);
+      const allowed = override
+        ? override === user.id
+        : await this.isAssignedWorker(user, dailyWash.vehicleId);
       if (!allowed) throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
     }
     const stored = await localFileStorageService.saveBuffer(
@@ -69,7 +78,10 @@ export class ImageService {
   }
 
   async listDailyWashImages(user: AppUser, dailyWashId: string): Promise<DailyWashImageRecord[]> {
-    const dailyWash = await imageRepository.findDailyWash(this.requireBusinessId(user), dailyWashId);
+    const dailyWash = await imageRepository.findDailyWash(
+      this.requireBusinessId(user),
+      dailyWashId,
+    );
     if (!dailyWash || (user.role === 'CUSTOMER' && dailyWash.customerId !== user.id))
       throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
     return imageRepository.findDailyWashImages(dailyWashId);
@@ -143,10 +155,7 @@ export class ImageService {
 
   private async isAssignedWorker(user: AppUser, vehicleId: string): Promise<boolean> {
     const businessId = this.requireBusinessId(user);
-    const assignments = await workerRepository.findAssignmentsByBusinessId(
-      businessId,
-      user.id,
-    );
+    const assignments = await workerRepository.findAssignmentsByBusinessId(businessId, user.id);
     return assignments.some((item) => item.vehicleId === vehicleId && item.status !== 'COMPLETED');
   }
 }

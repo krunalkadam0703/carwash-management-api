@@ -12,7 +12,11 @@ export class CustomerController {
     const pagination = parsePagination(req.query);
     if (pagination) {
       const result = await customerService.listPage(this.user(req), pagination);
-      ApiResponse.success(res, { customers: result.items, pagination: result.pagination }, 'Customers loaded.');
+      ApiResponse.success(
+        res,
+        { customers: result.items, pagination: result.pagination },
+        'Customers loaded.',
+      );
       return;
     }
     const customers = await customerService.list(this.user(req));

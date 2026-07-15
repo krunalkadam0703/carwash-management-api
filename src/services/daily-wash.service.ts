@@ -34,7 +34,8 @@ export class DailyWashService {
           slotOverride: await redisService.get(slotKey(row.businessId, row.id)),
           queueOrder: Number(await redisService.get(queueKey(row.businessId, row.id))) || null,
           temporaryWorkerId,
-          assignedWorkerId: temporaryWorkerId ?? permanentWorkerByVehicle.get(row.vehicleId) ?? null,
+          assignedWorkerId:
+            temporaryWorkerId ?? permanentWorkerByVehicle.get(row.vehicleId) ?? null,
         };
       }),
     );
@@ -59,19 +60,23 @@ export class DailyWashService {
       user.role === 'CUSTOMER' ? user.id : undefined,
     );
     const permanentWorkerByVehicle = await this.activeWorkerByVehicle(businessId);
-    const items = await Promise.all(result.items.map(async (row) => {
-      const temporaryWorkerId = await redisService.get(workerKey(row.businessId, row.id));
-      return {
-        ...row,
-        slotOverride: await redisService.get(slotKey(row.businessId, row.id)),
-        queueOrder: Number(await redisService.get(queueKey(row.businessId, row.id))) || null,
-        temporaryWorkerId,
-        assignedWorkerId: temporaryWorkerId ?? permanentWorkerByVehicle.get(row.vehicleId) ?? null,
-      };
-    }));
+    const items = await Promise.all(
+      result.items.map(async (row) => {
+        const temporaryWorkerId = await redisService.get(workerKey(row.businessId, row.id));
+        return {
+          ...row,
+          slotOverride: await redisService.get(slotKey(row.businessId, row.id)),
+          queueOrder: Number(await redisService.get(queueKey(row.businessId, row.id))) || null,
+          temporaryWorkerId,
+          assignedWorkerId:
+            temporaryWorkerId ?? permanentWorkerByVehicle.get(row.vehicleId) ?? null,
+        };
+      }),
+    );
     return {
       ...result,
-      items: user.role === 'WORKER' ? items.filter((row) => row.assignedWorkerId === user.id) : items,
+      items:
+        user.role === 'WORKER' ? items.filter((row) => row.assignedWorkerId === user.id) : items,
     };
   }
 
@@ -142,7 +147,8 @@ export class DailyWashService {
     if (user.role !== 'CUSTOMER')
       throw new AppError('Only customers can change wash slots.', HttpStatus.FORBIDDEN);
     const row = await this.requireDailyWash(user, id);
-    if (row.customerId !== user.id) throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
+    if (row.customerId !== user.id)
+      throw new AppError('Daily wash was not found.', HttpStatus.NOT_FOUND);
     if (row.status !== 'SCHEDULED')
       throw new AppError('Only scheduled washes can be changed.', HttpStatus.CONFLICT);
     const today = new Date();
@@ -186,14 +192,15 @@ export class DailyWashService {
       throw new AppError('Completed washes cannot be reordered.', HttpStatus.CONFLICT);
     await redisService.set(queueKey(row.businessId, id), String(queueOrder), 60 * 60 * 24 * 45);
     const workerId = await this.assignedWorkerId(row);
-    if (workerId) await notificationService.create({
-      userId: workerId,
-      type: 'SYSTEM',
-      title: 'Work order changed',
-      message: 'Your daily work queue order was changed.',
-      actionUrl: '/worker/jobs',
-      metadata: { dailyWashId: id, queueOrder },
-    });
+    if (workerId)
+      await notificationService.create({
+        userId: workerId,
+        type: 'SYSTEM',
+        title: 'Work order changed',
+        message: 'Your daily work queue order was changed.',
+        actionUrl: '/worker/jobs',
+        metadata: { dailyWashId: id, queueOrder },
+      });
     return { ...row, queueOrder };
   }
 
@@ -209,7 +216,8 @@ export class DailyWashService {
 
   number(value: unknown, field: string): number {
     const parsed = Number(value);
-    if (!Number.isInteger(parsed)) throw new AppError(field + ' is invalid.', HttpStatus.BAD_REQUEST);
+    if (!Number.isInteger(parsed))
+      throw new AppError(field + ' is invalid.', HttpStatus.BAD_REQUEST);
     return parsed;
   }
 

@@ -11,7 +11,10 @@ import type { PaginationInput, PaginatedResult } from '../utils/pagination.js';
 
 export interface ServiceRepositoryPort {
   findManyByBusinessId(businessId: string): Promise<ServiceRecord[]>;
-  findPageByBusinessId(businessId: string, input: PaginationInput): Promise<PaginatedResult<ServiceRecord>>;
+  findPageByBusinessId(
+    businessId: string,
+    input: PaginationInput,
+  ): Promise<PaginatedResult<ServiceRecord>>;
   findById(businessId: string, id: string): Promise<ServiceRecord | null>;
   create(input: CreateServiceInput): Promise<ServiceRecord>;
   update(input: UpdateServiceInput): Promise<ServiceRecord>;
@@ -46,7 +49,12 @@ export class ServiceService {
 
     const businessId = this.requireBusinessId(user);
     await this.ensureVehicleTypeBelongsToBusiness(businessId, input.vehicleTypeId);
-    await this.ensureUniqueService(businessId, input.vehicleTypeId, input.name, input.durationMinutes);
+    await this.ensureUniqueService(
+      businessId,
+      input.vehicleTypeId,
+      input.name,
+      input.durationMinutes,
+    );
 
     return this.repository.create({
       ...input,

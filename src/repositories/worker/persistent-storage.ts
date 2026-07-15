@@ -1,7 +1,20 @@
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
-import type { CreateWorkerAssignmentInput, UpdateWorkerStatusInput, WorkerAssignmentRecord, WorkerLiveStatus, WorkerStatusRecord } from '../../models/worker.model.js';
+import type {
+  CreateWorkerAssignmentInput,
+  UpdateWorkerStatusInput,
+  WorkerAssignmentRecord,
+  WorkerLiveStatus,
+  WorkerStatusRecord,
+} from '../../models/worker.model.js';
 
-type WorkerUser = { id: string; businessId?: string | null; name: string; email: string; phoneNumber?: string | null; isActive: boolean };
+type WorkerUser = {
+  id: string;
+  businessId?: string | null;
+  name: string;
+  email: string;
+  phoneNumber?: string | null;
+  isActive: boolean;
+};
 type UserDelegate = {
   findFirst(args: unknown): Promise<{ id: string } | null>;
   findMany(args: unknown): Promise<WorkerUser[]>;
@@ -82,7 +95,10 @@ export class WorkerPersistentStorageRepository {
     customerId?: string,
   ): Promise<WorkerAssignmentRecord[]> {
     return db.workerAssignment.findMany({
-      where: { ...(workerId ? { workerId } : {}), vehicle: { businessId, ...(customerId ? { customerId } : {}) } },
+      where: {
+        ...(workerId ? { workerId } : {}),
+        vehicle: { businessId, ...(customerId ? { customerId } : {}) },
+      },
       include: {
         worker: { select: { name: true, email: true, phoneNumber: true } },
         vehicle: {
