@@ -17,9 +17,7 @@ if (cluster.isPrimary && process.env.NODE_ENV === 'production') {
   }
 
   cluster.on('exit', (worker, code, signal) => {
-    console.error(
-      `❌ Worker [${worker.process.pid}] exited (Code: ${code}, Signal: ${signal})`,
-    );
+    console.error(`❌ Worker [${worker.process.pid}] exited (Code: ${code}, Signal: ${signal})`);
 
     cluster.fork();
   });
@@ -35,9 +33,7 @@ async function bootstrap(): Promise<void> {
     const server = http.createServer(app);
 
     server.listen(PORT, () => {
-      console.log(
-        `⚡ Worker [${process.pid}] listening on port ${PORT}`,
-      );
+      console.log(`⚡ Worker [${process.pid}] listening on port ${PORT}`);
     });
 
     const gracefulShutdown = async (signal: string): Promise<void> => {
