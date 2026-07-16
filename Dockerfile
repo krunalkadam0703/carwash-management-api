@@ -37,17 +37,23 @@ WORKDIR /app
 ENV NODE_ENV=production \
   PORT=5000
 
+RUN apk add --no-cache su-exec
+
 COPY --chown=node:node --from=prod-deps /app/node_modules ./node_modules
 COPY --chown=node:node --from=build /app/dist ./dist
 COPY --chown=node:node --from=build /app/src/generated ./src/generated
 COPY --chown=node:node package*.json ./
 COPY --chown=node:node prisma ./prisma
 COPY --chown=node:node prisma.config.ts ./
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
 
-RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
+RUN mkdir -p /app/public/uploads \
+  && chown -R node:node /app/public \
+  && chmod +x /app/docker-entrypoint.sh
 
-USER node
+USER root
 
 EXPOSE 5000
 
+ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
