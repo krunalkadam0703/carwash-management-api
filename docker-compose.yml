@@ -24,7 +24,7 @@ services:
       REDIS_PORT: 6379
       REDIS_DB: 0
     volumes:
-      - uploads:/app/uploads
+      - uploads:/app/public/uploads
     depends_on:
       postgres:
         condition: service_healthy
