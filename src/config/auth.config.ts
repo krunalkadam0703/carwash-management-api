@@ -12,7 +12,9 @@ const sameSiteOptions = ['lax', 'strict', 'none'] as const;
 type SameSiteOption = (typeof sameSiteOptions)[number];
 
 const configuredSameSite = process.env.COOKIE_SAME_SITE?.toLowerCase();
-const cookieSameSite: SameSiteOption = sameSiteOptions.includes(configuredSameSite as SameSiteOption)
+const cookieSameSite: SameSiteOption = sameSiteOptions.includes(
+  configuredSameSite as SameSiteOption,
+)
   ? (configuredSameSite as SameSiteOption)
   : isProduction
     ? 'none'
