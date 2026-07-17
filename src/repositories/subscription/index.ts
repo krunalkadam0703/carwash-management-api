@@ -39,6 +39,18 @@ export class SubscriptionRepository {
     return subscriptionPersistentStorageRepository.findById(businessId, id);
   }
 
+  findOpenByVehicle(
+    businessId: string,
+    customerId: string,
+    vehicleId: string,
+  ): Promise<SubscriptionRecord | null> {
+    return subscriptionPersistentStorageRepository.findOpenByVehicle(
+      businessId,
+      customerId,
+      vehicleId,
+    );
+  }
+
   findVehicle(
     businessId: string,
     vehicleId: string,

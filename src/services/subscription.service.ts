@@ -33,6 +33,17 @@ export class SubscriptionService {
     const vehicle = await subscriptionRepository.findVehicle(businessId, input.vehicleId);
     if (!vehicle || vehicle.customerId !== user.id)
       throw new AppError('Vehicle was not found.', HttpStatus.NOT_FOUND);
+    const existingSubscription = await subscriptionRepository.findOpenByVehicle(
+      businessId,
+      user.id,
+      input.vehicleId,
+    );
+    if (existingSubscription) {
+      throw new AppError(
+        'This vehicle already has a subscription request or active subscription. You can apply again only after it is rejected, expired, or cancelled.',
+        HttpStatus.CONFLICT,
+      );
+    }
 
     const plan = await subscriptionRepository.findPlan(businessId, input.planId);
     if (!plan) throw new AppError('Plan was not found.', HttpStatus.NOT_FOUND);
@@ -104,6 +115,8 @@ export class SubscriptionService {
 
   async reject(user: AppUser, id: string, reason: string): Promise<SubscriptionRecord> {
     this.requireOwner(user);
+    if (reason.trim().length < 3)
+      throw new AppError('Rejection reason must be at least 3 characters.', HttpStatus.BAD_REQUEST);
     const row = await this.requireRequested(this.requireBusinessId(user), id);
     const subscription = await subscriptionRepository.updateStatus(
       {

@@ -1,8 +1,9 @@
 import { prisma } from '../../infrastructure/prisma/prisma.client.js';
-import type {
-  CreateSubscriptionInput,
-  SubscriptionRecord,
-  UpdateSubscriptionStatusInput,
+import {
+  OPEN_SUBSCRIPTION_STATUSES,
+  type CreateSubscriptionInput,
+  type SubscriptionRecord,
+  type UpdateSubscriptionStatusInput,
 } from '../../models/subscription.model.js';
 import type { PaginationInput, PaginatedResult } from '../../utils/pagination.js';
 import { paginated, skip } from '../../utils/pagination.js';
@@ -116,6 +117,23 @@ export class SubscriptionPersistentStorageRepository {
 
   async findById(businessId: string, id: string): Promise<SubscriptionRecord | null> {
     const row = await db.vehicleSubscription.findFirst({ where: { id, businessId } });
+    return row ? mapSubscription(row) : null;
+  }
+
+  async findOpenByVehicle(
+    businessId: string,
+    customerId: string,
+    vehicleId: string,
+  ): Promise<SubscriptionRecord | null> {
+    const row = await db.vehicleSubscription.findFirst({
+      where: {
+        businessId,
+        customerId,
+        vehicleId,
+        status: { in: OPEN_SUBSCRIPTION_STATUSES },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
     return row ? mapSubscription(row) : null;
   }
 
