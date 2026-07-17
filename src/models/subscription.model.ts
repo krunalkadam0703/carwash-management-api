@@ -52,3 +52,11 @@ export type UpdateSubscriptionStatusInput = {
   rejectedAt?: Date;
   rejectionReason?: string;
 };
+
+export const OPEN_SUBSCRIPTION_STATUSES: SubscriptionStatus[] = [
+  'REQUESTED',
+  'APPROVED',
+  'PAYMENT_PENDING',
+  'PAYMENT_COMPLETED',
+  'ACTIVE',
+];

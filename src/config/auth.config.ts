@@ -7,6 +7,19 @@ const trustedOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+const isProduction = process.env.NODE_ENV === 'production';
+const sameSiteOptions = ['lax', 'strict', 'none'] as const;
+type SameSiteOption = (typeof sameSiteOptions)[number];
+
+const configuredSameSite = process.env.COOKIE_SAME_SITE?.toLowerCase();
+const cookieSameSite: SameSiteOption = sameSiteOptions.includes(
+  configuredSameSite as SameSiteOption,
+)
+  ? (configuredSameSite as SameSiteOption)
+  : isProduction
+    ? 'none'
+    : 'lax';
+
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.BETTER_AUTH_SECRET,
@@ -17,8 +30,8 @@ export const auth = betterAuth({
   advanced: {
     defaultCookieAttributes: {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      sameSite: cookieSameSite,
+      secure: isProduction,
     },
   },
   account: {
